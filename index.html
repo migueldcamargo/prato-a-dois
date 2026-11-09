@@ -1,0 +1,2123 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#FFFFFF">
+<meta name="description" content="O cardápio do casal: os pratos que vocês já fizeram ou pediram e um quiz para decidir o que comer.">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Prato a Dois">
+<meta name="format-detection" content="telephone=no">
+<title>Prato a Dois</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" href="icon-192.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<script src="config.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.118.0/dist/umd/supabase.js"></script>
+<style>
+/* Layout: uma coluna mobile (360–430 px), capa de restaurante, abas que grudam no topo, painéis que sobem de baixo. */
+:root{
+  --red:#EA1D2C; --red-dark:#C2111E; --red-soft:#FDECEE;
+  --ink:#3E3E3E; --ink-strong:#1E1E1E; --muted:#717171; --line:#EEEEEE; --soft:#F6F5F5;
+  --bg:#FFFFFF; --star:#FCBB00; --green:#1F8A4C; --green-soft:#E7F5EC;
+  --opt-a:#2F6FEB; --opt-b:#E8790C;
+  --font:-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --nav-h:60px; --sat:env(safe-area-inset-top); --sab:env(safe-area-inset-bottom);
+  color-scheme:light;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+[hidden]{display:none!important}
+html{touch-action:manipulation;overscroll-behavior:none;-webkit-text-size-adjust:100%;text-size-adjust:100%}
+html,body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--font);font-size:15px;line-height:1.38}
+body{overscroll-behavior:none;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+input,textarea{-webkit-user-select:text;user-select:text}
+html.locked,html.locked body{overflow:hidden}
+button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:pointer;text-align:inherit;touch-action:manipulation}
+button:disabled{cursor:default;opacity:.5}
+input{font:inherit;color:inherit}
+img{-webkit-user-drag:none;-webkit-touch-callout:none}
+h1,h2,h3{margin:0;color:var(--ink-strong);text-wrap:balance}
+p{margin:0}
+a{color:var(--red)}
+:focus-visible{outline:2px solid var(--red);outline-offset:2px;border-radius:6px}
+.ic{flex-shrink:0;display:block}
+.muted{color:var(--muted)}
+.vh{position:absolute;width:1px;height:1px;opacity:0;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+#app{max-width:480px;margin:0 auto;min-height:100vh;position:relative;background:var(--bg);padding-top:var(--sat)}
+#statusbg{position:fixed;top:0;left:0;right:0;height:var(--sat);background:#fff;z-index:45}
+#view{padding-bottom:calc(var(--nav-h) + 96px + var(--sab))}
+#view.noNav{padding-bottom:calc(32px + var(--sab))}
+
+/* Aviso para girar o celular */
+.rotate{display:none;position:fixed;inset:0;z-index:2000;background:#fff;flex-direction:column;align-items:center;justify-content:center;gap:12px;text-align:center;padding:24px}
+.rotate b{font-size:20px;color:var(--ink-strong)}
+.rotate .ic{color:var(--red);animation:tilt 1.6s ease-in-out infinite}
+@keyframes tilt{0%,30%{transform:rotate(-90deg)}60%,100%{transform:rotate(0)}}
+@media (orientation: landscape) and (max-height: 520px) and (pointer: coarse){
+  .rotate{display:flex}
+}
+
+/* Botões */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:44px;padding:0 16px;border-radius:10px;font-weight:600;font-size:15px;border:1px solid transparent;transition:transform .1s, background .15s;text-align:center}
+.btn:active{transform:scale(.98)}
+.btn-red{background:var(--red);color:#fff}
+.btn-red:active{background:var(--red-dark)}
+.btn-ghost{background:#fff;border-color:#DCDCDC;color:var(--ink)}
+.btn-soft{background:var(--red-soft);color:var(--red)}
+.btn-danger{background:#fff;border-color:#F3B6BB;color:var(--red)}
+.btn-lg{width:100%;min-height:52px;font-size:16px;border-radius:12px}
+.btn-sm{min-height:36px;padding:0 12px;font-size:14px;border-radius:8px}
+.btn-text{color:var(--red);font-weight:600;min-height:44px;padding:0 4px}
+.icon-btn{width:44px;height:44px;display:grid;place-items:center;border-radius:50%}
+.icon-btn:active{background:var(--soft)}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.spin .ic{animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* Campos */
+.lbl{display:block;font-weight:700;color:var(--ink-strong);margin-bottom:8px;font-size:15px}
+.lbl small{font-weight:400;color:var(--muted);margin-left:4px;font-size:13px}
+.lbl-sm{font-size:13px;font-weight:600;margin:12px 0 6px}
+.inp{width:100%;min-height:48px;border:1px solid #DCDCDC;border-radius:10px;padding:0 14px;font-size:16px;background:#fff;outline:none}
+.inp:focus{border-color:var(--red);box-shadow:0 0 0 3px rgba(234,29,44,.12)}
+.inp-sm{min-height:40px;font-size:16px;padding:0 10px}
+.inp-code{font-size:28px;letter-spacing:.35em;text-align:center;text-transform:uppercase;font-weight:800;font-variant-numeric:tabular-nums;min-height:64px}
+.err{color:var(--red);font-size:13px;margin-top:6px}
+.err:empty{display:none}
+.hint{font-size:13px;color:var(--muted);margin-top:8px}
+.fld{padding:4px 0 18px;border-bottom:1px solid var(--line);margin-bottom:16px}
+.fld:last-child{border-bottom:0;margin-bottom:0}
+.seg{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.seg-b{min-height:48px;border:1px solid #DCDCDC;border-radius:10px;display:flex;align-items:center;justify-content:center;gap:8px;font-weight:600;padding:0 8px;background:#fff;text-align:center}
+.seg-b[aria-pressed="true"]{border-color:var(--red);background:var(--red-soft);color:var(--red)}
+.seg-sm .seg-b{min-height:44px;font-size:14px}
+
+/* Chips */
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{display:inline-flex;align-items:center;gap:6px;min-height:36px;padding:0 12px;border-radius:999px;border:1px solid #DCDCDC;background:#fff;font-size:14px;font-weight:500}
+.chip-sel{min-height:40px}
+.chip-sel[aria-pressed="true"]{background:var(--ink-strong);border-color:var(--ink-strong);color:#fff}
+.chip-add{border-style:dashed;color:var(--red);border-color:#F0A6AC}
+.chip-sug{min-height:34px;background:var(--soft);border-color:transparent;font-size:13px}
+.chip-static{min-height:28px;padding:0 10px;font-size:13px;background:var(--soft);border-color:transparent}
+.chip-quiz{min-height:28px;padding:0 10px;font-size:13px;background:#FFF6DB;border-color:transparent;color:#7A5A00}
+.newcat{display:flex;gap:6px;align-items:center;flex:1 1 220px}
+.sugs{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.sugs:empty{display:none}
+
+/* Selos e papéis */
+.orig-home{display:inline-flex;align-items:center;gap:4px;font-size:12px;font-weight:700;color:var(--green);background:var(--green-soft);padding:2px 8px;border-radius:6px}
+.orig-rest{display:inline-flex;align-items:center;gap:4px;font-size:13px;color:var(--muted);font-weight:500}
+.role{font-size:12px;font-weight:700;padding:3px 8px;border-radius:6px;background:var(--soft);color:var(--muted);white-space:nowrap}
+.role-dono{background:var(--red-soft);color:var(--red)}
+.role-editor{background:var(--green-soft);color:var(--green)}
+.role-pendente{background:#FFF6DB;color:#8A6500}
+
+/* Estrelas */
+.stars{position:relative;display:inline-flex;vertical-align:middle}
+.st-base{display:flex;color:#DEDEDE}
+.st-top{position:absolute;left:0;top:0;bottom:0;display:flex;overflow:hidden;color:var(--star)}
+.rate{display:flex;gap:2px}
+.rstar{width:44px;height:44px;display:grid;place-items:center;color:#D8D8D8;border-radius:8px;transition:transform .12s}
+.rstar.on{color:var(--star)}
+.rstar:active{transform:scale(.88)}
+
+/* Abertura, erro, primeiro acesso */
+.center-screen{min-height:80vh;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;padding:32px 24px;text-align:center}
+.loader{width:36px;height:36px;border-radius:50%;border:3px solid var(--red-soft);border-top-color:var(--red);animation:spin .8s linear infinite}
+.onb{padding:40px 24px 32px;display:flex;flex-direction:column;gap:20px;min-height:90vh;justify-content:center}
+.onb-art{display:flex;justify-content:center}
+.onb-title{font-size:30px;font-weight:800;text-align:center;letter-spacing:-.01em}
+.onb-sub{text-align:center;color:var(--muted);font-size:16px;max-width:32ch;margin:0 auto}
+.onb-form{display:flex;flex-direction:column;gap:12px;margin-top:8px}
+.onb-note{font-size:13px;color:var(--muted);text-align:center}
+
+/* Início */
+.home{padding:0 16px}
+.home-top{display:flex;align-items:center;justify-content:space-between;padding:14px 0 6px}
+.brand{display:flex;align-items:center;gap:10px;font-weight:800;color:var(--red);font-size:18px;letter-spacing:-.01em}
+.home-hello{padding:18px 0 16px}
+.home-hello h1{font-size:26px;font-weight:800;letter-spacing:-.01em}
+.home-hello p{color:var(--muted);margin-top:4px;font-size:16px}
+.home-actions{display:grid;gap:10px}
+.hact{display:flex;align-items:center;gap:14px;padding:16px;border-radius:14px;border:1px solid #E4E4E4;background:#fff;min-height:72px;width:100%}
+.hact b{display:block;font-size:16px;color:var(--ink-strong)}
+.hact small{display:block;color:var(--muted);font-size:13px;margin-top:2px}
+.hact .hact-ic{width:44px;height:44px;border-radius:12px;display:grid;place-items:center;background:var(--red-soft);color:var(--red);flex-shrink:0}
+.hact-red{background:var(--red);border-color:var(--red)}
+.hact-red b,.hact-red small{color:#fff}
+.hact-red small{opacity:.85}
+.hact-red .hact-ic{background:rgba(255,255,255,.18);color:#fff}
+.install-chip{display:flex;align-items:center;gap:10px;width:100%;margin-top:12px;padding:12px 14px;border-radius:12px;background:#EEF3FE;color:#24448F;font-size:14px;font-weight:600;text-align:left}
+.install-chip span{flex:1}
+.h2{font-size:18px;font-weight:800;margin:28px 0 8px}
+.mylist{display:flex;flex-direction:column}
+.myitem{display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid var(--line);min-height:64px;width:100%}
+.my-logo{width:44px;height:44px;border-radius:50%;background:var(--red-soft);color:var(--red);display:grid;place-items:center;font-weight:800;font-size:18px;flex-shrink:0}
+.my-info{flex:1;min-width:0}
+.my-info b{display:block;color:var(--ink-strong);font-size:15px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.my-info small{color:var(--muted);font-size:13px;font-variant-numeric:tabular-nums;letter-spacing:.06em}
+.my-badge{font-size:12px;font-weight:700;color:#fff;background:var(--red);padding:2px 7px;border-radius:999px;white-space:nowrap}
+.empty-sm{padding:20px 0;color:var(--muted)}
+.link-btn{display:block;margin:20px auto 0;color:var(--muted);font-size:14px;min-height:44px;text-decoration:underline}
+
+/* Avisos */
+.banner{display:flex;align-items:center;gap:10px;margin:10px 16px 0;padding:12px 14px;border-radius:12px;font-size:14px;width:calc(100% - 32px);text-align:left}
+.banner .grow{flex:1}
+.banner .btn-sm{flex-shrink:0}
+.banner-warn{background:#FFF6DB;color:#6B4E00}
+.banner-info{background:#EEF3FE;color:#24448F}
+.banner-red{background:var(--red-soft);color:#9B0F1A}
+
+/* Capa do cardápio */
+.cover{position:relative}
+.cover-banner{height:120px;background:linear-gradient(135deg,#EA1D2C 0%,#C8101E 100%);position:relative;overflow:hidden}
+.cover-banner span{position:absolute;font-size:46px;opacity:.2;line-height:1}
+.cover-btns{position:absolute;top:10px;left:10px;right:10px;display:flex;justify-content:space-between;z-index:2}
+.cover-btn{height:40px;min-width:40px;padding:0 12px 0 8px;border-radius:999px;background:rgba(255,255,255,.95);color:var(--ink-strong);display:flex;align-items:center;gap:2px;font-weight:600;font-size:14px;box-shadow:0 1px 4px rgba(0,0,0,.12)}
+.cover-btn.round{padding:0;width:40px;justify-content:center}
+.cover-card{position:relative;margin-top:-26px;background:#fff;border-radius:22px 22px 0 0;padding:0 16px 6px;text-align:center}
+.cover-logo{width:68px;height:68px;border-radius:50%;background:#fff;border:1px solid var(--line);box-shadow:0 2px 10px rgba(0,0,0,.08);margin:0 auto;transform:translateY(-34px);margin-bottom:-26px;display:grid;place-items:center;font-size:28px;font-weight:800;color:var(--red)}
+.cover-name{font-size:22px;font-weight:800;letter-spacing:-.01em}
+.cover-meta{display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:6px;margin-top:6px;color:var(--muted);font-size:14px}
+.cover-rate{display:inline-flex;align-items:center;gap:3px;color:#B88700;font-weight:700}
+.cover-rate .ic{color:var(--star)}
+.dot{width:3px;height:3px;border-radius:50%;background:#BDBDBD}
+.skel{background:linear-gradient(90deg,#F1F1F1 25%,#F8F8F8 50%,#F1F1F1 75%);background-size:200% 100%;animation:sk 1.2s infinite;border-radius:8px}
+@keyframes sk{to{background-position:-200% 0}}
+
+/* Busca e abas */
+.search{position:relative;margin:14px 16px 4px}
+.search .ic{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--muted)}
+.search input{width:100%;min-height:44px;border-radius:10px;border:0;background:var(--soft);padding:0 12px 0 40px;font-size:16px;outline:none;-webkit-appearance:none;appearance:none}
+.search input:focus{box-shadow:0 0 0 2px rgba(234,29,44,.25)}
+.cattabs{position:sticky;top:var(--sat);z-index:20;background:#fff;display:flex;gap:4px;overflow-x:auto;scrollbar-width:none;padding:0 8px;border-bottom:1px solid var(--line);margin-top:6px}
+.cattabs::-webkit-scrollbar{display:none}
+.ctab{flex-shrink:0;min-height:48px;padding:0 10px;color:var(--muted);font-weight:600;font-size:14px;position:relative;white-space:nowrap}
+.ctab.on{color:var(--red)}
+.ctab.on::after{content:"";position:absolute;left:10px;right:10px;bottom:0;height:3px;border-radius:3px 3px 0 0;background:var(--red)}
+.ctab-add{color:var(--red);display:grid;place-items:center;min-width:44px}
+
+/* Seções e cards */
+.sec-title{font-size:18px;font-weight:800;padding:22px 16px 6px}
+.sec-sub{font-size:13px;color:var(--muted);padding:0 16px 4px}
+.dish{display:flex;align-items:stretch;gap:12px;width:100%;padding:14px 16px;border-bottom:1px solid var(--line);background:#fff;position:relative}
+.dish:active{background:#FAFAFA}
+.dish-info{flex:1;min-width:0;display:flex;flex-direction:column;gap:5px;justify-content:center}
+.dish-name{font-weight:700;font-size:16px;color:var(--ink-strong);line-height:1.25;overflow-wrap:anywhere}
+.dish-orig{display:flex}
+.dish-rate{display:flex;align-items:center;gap:6px;font-size:13px}
+.dish-rate b{color:#8A6500;font-weight:700}
+.dish-last{font-size:13px;color:var(--muted)}
+.dish-thumb{width:92px;height:92px;border-radius:10px;overflow:hidden;flex-shrink:0;border:1px solid var(--line);background:var(--red-soft);display:grid;place-items:center}
+.dish-thumb img,.det-photo img,.foto-prev img,.sw-photo img,.tl-thumb img{width:100%;height:100%;object-fit:cover;display:block}
+.ph{font-size:38px;line-height:1}
+.empty{padding:40px 24px;text-align:center;display:flex;flex-direction:column;align-items:center;gap:12px}
+.empty-art{font-size:46px;line-height:1}
+.empty h3{font-size:18px}
+.empty p{color:var(--muted);max-width:30ch}
+
+/* Navegação inferior e botões flutuantes */
+.bnav{position:fixed;left:50%;transform:translateX(-50%);bottom:0;width:100%;max-width:480px;height:calc(var(--nav-h) + var(--sab));padding-bottom:var(--sab);background:#fff;border-top:1px solid var(--line);display:grid;grid-template-columns:repeat(3,1fr);z-index:30}
+.bnav button{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;font-size:12px;font-weight:600;color:#8A8A8A;position:relative}
+.bnav button.on{color:var(--red)}
+.nav-badge{position:absolute;top:6px;left:calc(50% + 6px);min-width:18px;height:18px;padding:0 5px;border-radius:999px;background:var(--red);color:#fff;font-size:11px;display:grid;place-items:center}
+.fabs{position:fixed;left:50%;transform:translateX(-50%);width:100%;max-width:480px;bottom:calc(var(--nav-h) + 14px + var(--sab));display:flex;justify-content:flex-end;align-items:center;gap:12px;padding:0 16px;z-index:25;pointer-events:none}
+.fabs>*{pointer-events:auto}
+.fab-quiz{height:52px;padding:0 20px 0 16px;border-radius:999px;background:var(--red);color:#fff;font-weight:700;font-size:15px;display:flex;align-items:center;gap:8px;box-shadow:0 6px 18px rgba(234,29,44,.35)}
+.fab-add{width:56px;height:56px;border-radius:50%;background:#fff;color:var(--red);display:grid;place-items:center;box-shadow:0 4px 14px rgba(0,0,0,.18);border:1px solid #F2D4D7}
+.fab-quiz:active,.fab-add:active{transform:scale(.96)}
+
+/* Painéis que sobem de baixo */
+.sheet-wrap{position:fixed;inset:0;display:flex;align-items:flex-end;justify-content:center}
+.sheet-bg{position:absolute;inset:0;background:rgba(20,20,20,.45);opacity:0;transition:opacity .2s}
+.sheet{position:relative;width:100%;max-width:480px;max-height:calc(92% - var(--sat));background:#fff;border-radius:18px 18px 0 0;transform:translateY(100%);transition:transform .24s cubic-bezier(.2,.8,.2,1);display:flex;flex-direction:column;overflow:hidden}
+.sheet-wrap.open .sheet-bg{opacity:1}
+.sheet-wrap.open .sheet{transform:none}
+.sheet.tall{height:calc(92% - var(--sat))}
+.sheet.full{height:100%;max-height:100%;border-radius:0;padding-top:var(--sat)}
+.sheet.dialog{max-width:420px;margin:0 12px calc(12px + var(--sab));border-radius:18px}
+.sheet-head{display:flex;align-items:center;gap:8px;padding:10px 6px 10px 18px;border-bottom:1px solid var(--line);flex-shrink:0}
+.sheet-head h3{flex:1;font-size:17px;font-weight:800}
+.sheet:not(.full) .sheet-head::before{content:"";position:absolute;top:6px;left:50%;width:36px;height:4px;border-radius:4px;background:#DDD;transform:translateX(-50%)}
+.sheet-body{overflow-y:auto;-webkit-overflow-scrolling:touch;padding:18px;flex:1;overscroll-behavior:contain}
+.sheet-foot{padding:12px 16px calc(12px + var(--sab));border-top:1px solid var(--line);flex-shrink:0;background:#fff}
+.dlg{padding:22px 20px 18px;display:flex;flex-direction:column;gap:10px}
+.dlg h3{font-size:18px}
+.dlg p{color:var(--muted)}
+.dlg .row2{margin-top:10px}
+
+/* Aviso flutuante */
+.toast{position:fixed;left:50%;bottom:calc(var(--nav-h) + 84px + var(--sab));transform:translate(-50%,20px);width:calc(100% - 32px);max-width:448px;background:#262626;color:#fff;border-radius:12px;padding:12px 14px;display:flex;align-items:center;gap:12px;font-size:14px;opacity:0;pointer-events:none;transition:opacity .18s, transform .18s;z-index:300;box-shadow:0 6px 20px rgba(0,0,0,.25)}
+.toast.show{opacity:1;transform:translate(-50%,0);pointer-events:auto}
+.toast span{flex:1}
+.toast-act{color:#FF8A93;font-weight:700;min-height:36px;padding:0 6px}
+
+/* Criação e código */
+.created{display:flex;flex-direction:column;align-items:center;gap:12px;text-align:center}
+.ok-ic{width:56px;height:56px;border-radius:50%;background:var(--green-soft);color:var(--green);display:grid;place-items:center}
+.code-big{display:flex;gap:6px;justify-content:center;margin:6px 0 4px}
+.code-big span{width:48px;height:58px;border-radius:10px;border:2px solid var(--red);display:grid;place-items:center;font-size:28px;font-weight:800;color:var(--red);font-variant-numeric:tabular-nums}
+.created .row2{width:100%}
+.wa-link{font-size:14px;font-weight:600;color:var(--green);min-height:44px;display:inline-flex;align-items:center}
+
+/* Detalhe */
+.det{display:flex;flex-direction:column;height:100%}
+.det-scroll{overflow-y:auto;-webkit-overflow-scrolling:touch;flex:1;overscroll-behavior:contain;padding-bottom:calc(24px + var(--sab))}
+.det-photo{position:relative;aspect-ratio:4/3;max-height:320px;width:100%;background:var(--red-soft);display:grid;place-items:center;overflow:hidden}
+.det-photo .ph{font-size:84px}
+.det-close{position:absolute;top:12px;left:12px;width:40px;height:40px;border-radius:50%;background:rgba(255,255,255,.95);display:grid;place-items:center;box-shadow:0 1px 4px rgba(0,0,0,.15)}
+.det-body{padding:18px 16px 0;display:flex;flex-direction:column;gap:12px}
+.det-name{font-size:24px;font-weight:800;letter-spacing:-.01em;overflow-wrap:anywhere}
+.det-block{border-top:1px solid var(--line);padding-top:16px;margin-top:4px;display:flex;flex-direction:column;gap:10px}
+.det-block h3{font-size:16px;font-weight:800}
+.rate-row{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap}
+.rate-row>span{font-weight:600}
+.rate-sum{font-size:14px;color:var(--ink)}
+.rate-sum b{color:var(--ink-strong)}
+.done-sum{font-size:14px;color:var(--muted);text-align:center}
+.dates{display:flex;flex-wrap:wrap;gap:6px;justify-content:center}
+.det-actions{display:grid;grid-template-columns:1fr 1fr;gap:10px;border-top:1px solid var(--line);padding-top:16px;margin-top:4px}
+.det-actions .wide{grid-column:1/-1}
+
+/* Formulário */
+.rest-wrap{margin-top:4px}
+.foto-prev{display:flex;align-items:center;gap:12px;margin-bottom:10px}
+.foto-prev img{width:88px;height:88px;border-radius:10px;border:1px solid var(--line)}
+.rate-lg .rstar{width:48px;height:48px}
+.collapse{display:flex;align-items:center;gap:10px;width:100%;min-height:48px;font-weight:700;color:var(--ink-strong)}
+.collapse span{flex:1}
+.collapse small{font-weight:400;color:var(--muted);margin-left:4px}
+.collapse .ic:first-child{color:var(--red)}
+.collapse[aria-expanded="true"] .ic:last-child{transform:rotate(180deg)}
+.quiz-attrs{display:flex;flex-direction:column;gap:14px;padding-top:8px}
+.qa-q{display:block;font-size:14px;font-weight:600;margin-bottom:6px}
+
+/* Quiz */
+.qz{display:flex;flex-direction:column;height:100%;padding:0 0 calc(16px + var(--sab))}
+.qz-top{display:flex;align-items:center;gap:6px;padding:8px 8px 4px}
+.prog{flex:1;height:6px;border-radius:6px;background:#F0F0F0;overflow:hidden}
+.prog i{display:block;height:100%;background:var(--red);border-radius:6px;transition:width .25s}
+.qz-main{flex:1;display:flex;flex-direction:column;padding:18px 20px;gap:22px;overflow-y:auto}
+.qz-step{font-size:13px;font-weight:700;color:var(--red);text-transform:uppercase;letter-spacing:.06em}
+.qz-q{font-size:28px;font-weight:800;line-height:1.15;letter-spacing:-.01em}
+.qz-opts{display:flex;flex-direction:column;gap:12px;margin-top:auto}
+.qopt{display:flex;align-items:center;gap:14px;min-height:76px;padding:0 18px;border-radius:16px;border:1.5px solid #E2E2E2;font-size:19px;font-weight:700;color:var(--ink-strong);background:#fff}
+.qopt:active{border-color:var(--red);background:var(--red-soft)}
+.qopt .qe{font-size:30px;width:40px;text-align:center}
+.qskip{min-height:52px;font-weight:700;color:var(--muted);border-radius:12px;background:var(--soft);text-align:center}
+.qz-res{flex:1;overflow-y:auto;padding:4px 0 8px}
+.qz-res h2{font-size:24px;font-weight:800;padding:8px 16px 2px}
+.qz-res>.muted{padding:0 16px 6px;font-size:14px}
+.qz-res .banner{margin:10px 16px 6px}
+.sug-list{margin-top:6px;border-top:1px solid var(--line)}
+.sug-list .dish{transition:background .1s, box-shadow .1s}
+.sug-list .dish.hl{background:var(--red-soft)}
+.sug-list .dish.picked{background:var(--red-soft);box-shadow:inset 4px 0 0 var(--red)}
+.qz-actions{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:12px 16px 0;border-top:1px solid var(--line)}
+.qz-actions .wide{grid-column:1/-1}
+
+/* Classificação rápida (arrastar) */
+.sw{display:flex;flex-direction:column;height:100%;padding-bottom:calc(12px + var(--sab))}
+.sw-top{display:flex;align-items:center;gap:6px;padding:8px 8px 0}
+.sw-q{flex:1;text-align:center;font-weight:800;font-size:18px;color:var(--ink-strong)}
+.sw-prog{padding:6px 20px 0;display:flex;align-items:center;gap:10px;font-size:13px;color:var(--muted);font-variant-numeric:tabular-nums}
+.sw-stage{flex:1;position:relative;display:flex;align-items:center;justify-content:center;padding:12px 44px;min-height:300px;overflow:hidden}
+.sw-side{position:absolute;top:50%;transform:translateY(-50%);writing-mode:vertical-rl;font-weight:800;font-size:15px;letter-spacing:.04em;padding:14px 6px;border-radius:10px;transition:transform .15s, background .15s, color .15s}
+.sw-side.l{left:6px;color:var(--opt-a);background:#EEF3FE;transform:translateY(-50%) rotate(180deg)}
+.sw-side.r{right:6px;color:var(--opt-b);background:#FEF2E6}
+.sw-side.l.hot{background:var(--opt-a);color:#fff}
+.sw-side.r.hot{background:var(--opt-b);color:#fff}
+.sw-stack{position:relative;width:100%;max-width:300px;aspect-ratio:3/4;max-height:100%}
+.sw-card{position:absolute;inset:0;background:#fff;border-radius:18px;box-shadow:0 8px 28px rgba(0,0,0,.14);border:1px solid var(--line);overflow:hidden;display:flex;flex-direction:column;touch-action:none;cursor:grab;--ta:0;--tb:0}
+.sw-card.back{transform:scale(.94) translateY(14px);opacity:.7;pointer-events:none;box-shadow:0 4px 14px rgba(0,0,0,.08)}
+.sw-card::after{content:"";position:absolute;inset:0;pointer-events:none;background:var(--opt-a);opacity:calc(var(--ta) * .38)}
+.sw-card::before{content:"";position:absolute;inset:0;pointer-events:none;background:var(--opt-b);opacity:calc(var(--tb) * .38);z-index:1}
+.sw-photo{flex:1;min-height:0;background:var(--red-soft);display:grid;place-items:center;overflow:hidden}
+.sw-photo .ph{font-size:90px}
+.sw-info{padding:14px 16px 16px;display:flex;flex-direction:column;gap:8px}
+.sw-info b{font-size:20px;color:var(--ink-strong);line-height:1.2}
+.sw-btns{display:grid;grid-template-columns:1fr auto 1fr;gap:8px;padding:6px 16px 0}
+.sw-btns .btn{min-height:52px}
+.btn-a{background:var(--opt-a);color:#fff}
+.btn-b{background:var(--opt-b);color:#fff}
+.sw-sub{display:flex;justify-content:space-between;align-items:center;padding:6px 16px 0}
+.sw-pick{padding:8px 16px 16px;display:flex;flex-direction:column;gap:10px;overflow-y:auto;flex:1}
+.sw-pick>p{color:var(--muted);padding:4px 4px 6px}
+.pick-q{display:flex;align-items:center;gap:12px;min-height:68px;padding:12px 16px;border-radius:14px;border:1px solid #E2E2E2;text-align:left;width:100%}
+.pick-q span{flex:1}
+.pick-q b{display:block;font-size:16px;color:var(--ink-strong)}
+.pick-q small{color:var(--muted);font-size:13px}
+.toggle{display:flex;align-items:center;gap:10px;min-height:44px;font-size:14px;font-weight:600}
+.toggle input{width:20px;height:20px;accent-color:var(--red)}
+
+/* Tutorial de instalação */
+.tut{display:flex;flex-direction:column;height:100%}
+.tut-scroll{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:4px 20px 20px;overscroll-behavior:contain}
+.tut-hero{display:flex;flex-direction:column;align-items:center;text-align:center;gap:10px;padding:6px 0 14px}
+.tut-hero h2{font-size:21px;font-weight:800}
+.tut-hero p{color:var(--muted);max-width:32ch}
+.tut-tabs{display:flex;justify-content:center;margin:4px 0 10px}
+.tut-steps{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:10px}
+.tut-step{display:flex;gap:14px;align-items:flex-start;padding:14px;border:1px solid var(--line);border-radius:14px;background:#fff}
+.tut-n{width:28px;height:28px;border-radius:50%;background:var(--red);color:#fff;font-weight:800;display:grid;place-items:center;flex-shrink:0;font-size:14px}
+.tut-txt{flex:1;display:flex;flex-direction:column;gap:4px;padding-top:3px}
+.tut-txt b{color:var(--ink-strong)}
+.tut-txt small{color:var(--muted);font-size:13px}
+.tut-ico{width:44px;height:44px;border-radius:12px;background:var(--soft);display:grid;place-items:center;color:#0A7AFF;flex-shrink:0}
+.tut-ico.and{color:#1E8E3E}
+.tut-key{display:inline-flex;align-items:center;gap:4px;padding:1px 7px;border-radius:6px;background:var(--soft);font-weight:700;color:var(--ink-strong);white-space:nowrap}
+.tut-foot{padding:12px 20px calc(12px + var(--sab));border-top:1px solid var(--line);display:flex;flex-direction:column;gap:6px}
+.tut-ok{display:flex;flex-direction:column;align-items:center;gap:10px;text-align:center;padding:30px 10px}
+
+/* Histórico e configurações */
+.topbar{display:flex;align-items:center;gap:4px;padding:6px 6px 6px 4px;border-bottom:1px solid var(--line);position:sticky;top:var(--sat);background:#fff;z-index:20}
+.topbar h1{flex:1;font-size:18px;font-weight:800;text-align:center}
+.pad{padding:0 16px}
+.seg-pill{display:inline-flex;background:var(--soft);border-radius:999px;padding:3px;margin:4px 16px 4px}
+.seg-pill button{min-height:36px;padding:0 14px;border-radius:999px;font-size:13px;font-weight:700;color:var(--muted)}
+.seg-pill button[aria-pressed="true"]{background:#fff;color:var(--ink-strong);box-shadow:0 1px 3px rgba(0,0,0,.1)}
+.tl-day{font-size:13px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;padding:16px 16px 4px}
+.tl-row{display:flex;align-items:center;gap:12px;width:100%;padding:10px 16px;min-height:60px;border-bottom:1px solid var(--line)}
+.tl-thumb{width:44px;height:44px;border-radius:8px;overflow:hidden;background:var(--red-soft);display:grid;place-items:center;flex-shrink:0}
+.tl-thumb .ph{font-size:22px}
+.tl-txt{flex:1;min-width:0}
+.tl-txt b{display:block;color:var(--ink-strong);font-size:15px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tl-txt small{color:var(--muted);font-size:13px}
+.rk-pos{width:26px;font-weight:800;color:var(--red);font-variant-numeric:tabular-nums;text-align:center;flex-shrink:0}
+.rk-n{font-weight:800;color:var(--ink-strong);font-variant-numeric:tabular-nums}
+.cfg-sec{padding:6px 16px 10px;border-bottom:8px solid var(--soft)}
+.cfg-sec h2{font-size:16px;font-weight:800;padding:14px 0 6px}
+.cfg-row{display:flex;align-items:center;gap:10px;padding:10px 0;min-height:56px;border-bottom:1px solid var(--line);flex-wrap:wrap}
+.cfg-row:last-child{border-bottom:0}
+.cfg-row .grow{flex:1;min-width:0}
+.cfg-row small{display:block;color:var(--muted);font-size:12px}
+.cfg-row b{display:block;color:var(--ink-strong);overflow-wrap:anywhere}
+.cfg-row .mono{letter-spacing:.18em;font-size:18px;font-variant-numeric:tabular-nums}
+.cfg-btns{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}
+.cfg-link{display:flex;align-items:center;gap:12px;width:100%;min-height:56px;padding:10px 0;border-bottom:1px solid var(--line);text-align:left}
+.cfg-link span{flex:1}
+.cfg-link b{display:block;color:var(--ink-strong)}
+.cfg-link small{display:block;color:var(--muted);font-size:12px}
+.cat-ic{width:36px;height:36px;border-radius:10px;background:var(--soft);display:grid;place-items:center;font-size:20px;flex-shrink:0}
+.emoji-grid{display:grid;grid-template-columns:repeat(8,1fr);gap:4px}
+.emoji-grid button{height:44px;border-radius:10px;font-size:24px;display:grid;place-items:center}
+.emoji-grid button[aria-pressed="true"]{background:var(--red-soft);box-shadow:inset 0 0 0 2px var(--red)}
+.foot-note{padding:18px 16px;color:var(--muted);font-size:12px;text-align:center}
+.copybox{width:100%;min-height:110px;border:1px solid #DCDCDC;border-radius:10px;padding:12px;font-size:15px;resize:none}
+
+@media (prefers-reduced-motion: reduce){
+  *,*::before,*::after{transition-duration:.01ms!important;animation-duration:.01ms!important}
+}
+</style>
+</head>
+<body>
+<div id="statusbg"></div>
+<div id="app">
+  <main id="view" class="noNav"></main>
+  <div id="fabs" class="fabs" hidden></div>
+  <nav id="bnav" class="bnav" hidden aria-label="Navegação"></nav>
+</div>
+<div id="toast" class="toast" role="status" aria-live="polite"></div>
+<div class="rotate" role="alert">
+  <svg class="ic" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="7" y="2.5" width="10" height="19" rx="2.2"/><path d="M11 18.5h2"/></svg>
+  <b>Gire o celular para a vertical</b>
+  <p class="muted">O Prato a Dois funciona só com o celular em pé.</p>
+</div>
+
+<script>
+"use strict";
+/* ============================== Configuração ============================== */
+const APP_NAME = "Prato a Dois";
+const CFG = window.PRATO_CONFIG || {};
+
+/* ============================== Comportamento de app (sem zoom, em pé) ============================== */
+["gesturestart", "gesturechange", "gestureend"].forEach(t => document.addEventListener(t, e => e.preventDefault(), { passive: false }));
+document.addEventListener("touchmove", e => { if (e.touches && e.touches.length > 1) e.preventDefault(); }, { passive: false });
+document.addEventListener("dblclick", e => e.preventDefault(), { passive: false });
+document.addEventListener("contextmenu", e => { if (e.target && e.target.tagName === "IMG") e.preventDefault(); });
+function lockPortrait() { try { if (screen.orientation && screen.orientation.lock) screen.orientation.lock("portrait").catch(() => {}); } catch (e) {} }
+if ("serviceWorker" in navigator && location.protocol === "https:") {
+  window.addEventListener("load", () => navigator.serviceWorker.register("sw.js").catch(() => {}));
+}
+
+/* ============================== Utilidades ============================== */
+const $ = (s, r = document) => r.querySelector(s);
+const $$ = (s, r = document) => Array.from(r.querySelectorAll(s));
+const esc = s => String(s == null ? "" : s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+const norm = s => String(s || "").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().trim();
+const fmt1 = n => n.toFixed(1).replace(".", ",");
+const pad = n => String(n).padStart(2, "0");
+const todayStr = () => { const d = new Date(); return d.getFullYear() + "-" + pad(d.getMonth() + 1) + "-" + pad(d.getDate()); };
+const dayNum = s => { const [y, m, d] = s.split("-").map(Number); return Math.round(Date.UTC(y, m - 1, d) / 86400000); };
+const daysAgo = s => dayNum(todayStr()) - dayNum(s);
+const fmtDate = s => { const [y, m, d] = s.split("-"); return d + "/" + m + (Number(y) !== new Date().getFullYear() ? "/" + y : ""); };
+const WD = ["dom", "seg", "ter", "qua", "qui", "sex", "sáb"];
+const byName = (a, b) => a.nome.localeCompare(b.nome, "pt-BR", { sensitivity: "base" });
+const reduceMotion = () => window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches;
+const nowISO = () => new Date().toISOString();
+const tsOf = s => { const t = Date.parse(s || ""); return isNaN(t) ? 0 : t; };
+const CODE_CHARS = "ABCDEFGHJKMNPQRSTUVWXYZ23456789"; // sem 0, O, 1, I, L
+function uuid() {
+  if (window.crypto && crypto.randomUUID) return crypto.randomUUID();
+  const b = crypto.getRandomValues(new Uint8Array(16)); b[6] = (b[6] & 15) | 64; b[8] = (b[8] & 63) | 128;
+  const h = Array.from(b, x => x.toString(16).padStart(2, "0")).join("");
+  return `${h.slice(0, 8)}-${h.slice(8, 12)}-${h.slice(12, 16)}-${h.slice(16, 20)}-${h.slice(20)}`;
+}
+const MEM = {};
+const LS = {
+  get(k) { try { const v = localStorage.getItem(k); return v == null ? (MEM[k] ?? null) : v; } catch (e) { return MEM[k] ?? null; } },
+  set(k, v) { MEM[k] = v; try { localStorage.setItem(k, v); } catch (e) {} },
+  json(k) { try { return JSON.parse(LS.get(k) || "null"); } catch (e) { return null; } }
+};
+
+/* Plataforma */
+const UA = navigator.userAgent || "";
+const isIOS = /iPhone|iPad|iPod/.test(UA) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+const isAndroid = /Android/i.test(UA);
+const isMobile = isIOS || isAndroid;
+const isStandalone = () => (window.matchMedia && matchMedia("(display-mode: standalone)").matches) || navigator.standalone === true;
+const iosBrowser = () => /CriOS/.test(UA) ? "chrome" : (/FxiOS|EdgiOS|OPiOS|GSA\//.test(UA) ? "outro" : "safari");
+let installPrompt = null;
+window.addEventListener("beforeinstallprompt", e => { e.preventDefault(); installPrompt = e; const b = $("#instNow"); if (b) b.hidden = false; });
+window.addEventListener("appinstalled", () => { installPrompt = null; LS.set("pd:tutorial", "1"); toast("App instalado! Abra pelo ícone na tela inicial."); });
+
+const ATTRS = [
+  { key: "tempo", q: "Rápido ou elaborado?", a: ["rapido", "Rápido", "⚡"], b: ["elaborado", "Elaborado", "👨‍🍳"] },
+  { key: "peso", q: "Leve ou encorpado?", a: ["leve", "Leve", "🥗"], b: ["encorpado", "Encorpado", "🍖"] },
+  { key: "sabor", q: "Salgado ou doce?", a: ["salgado", "Salgado", "🧂"], b: ["doce", "Doce", "🍫"] },
+  { key: "ocasiao", q: "Dia a dia ou ocasião especial?", a: ["diadia", "Dia a dia", "🏠"], b: ["especial", "Ocasião especial", "🥂"] }
+];
+const ATTR_LABEL = {};
+ATTRS.forEach(a => { ATTR_LABEL[a.key + ":" + a.a[0]] = a.a[1]; ATTR_LABEL[a.key + ":" + a.b[0]] = a.b[1]; });
+const QUIZ_STEPS = [{ key: "origem", q: "Fazer em casa ou pedir?", a: ["casa", "Fazer em casa", "🏠"], b: ["restaurante", "Pedir", "🛵"] }].concat(ATTRS);
+const ROLE_LABEL = { dono: "Dono", editor: "Editor", leitor: "Leitor", pendente: "Aguardando aprovação", visitante: "Leitor" };
+const EMOJIS = ["🍴","🍔","🍕","🍝","🍚","🥢","🍣","🔥","🥩","🥗","🌯","🍲","🥪","🍟","🍰","🌮","🍜","🥞","🍳","🥘","🍗","🐟","🦐","🥟","🍛","🧀","🥐","🍦","🍫","🥤","🍺","🥑"];
+
+/* ============================== Ícones ============================== */
+const ICONS = {
+  chevL: '<path d="M15 18l-6-6 6-6"/>', chevR: '<path d="M9 6l6 6-6 6"/>', chevD: '<path d="M6 9l6 6 6-6"/>',
+  refresh: '<path d="M20 12a8 8 0 1 1-2.34-5.66L20 8.5"/><path d="M20 3.5v5h-5"/>',
+  search: '<circle cx="11" cy="11" r="6.5"/><path d="M20 20l-4.2-4.2"/>', plus: '<path d="M12 5v14M5 12h14"/>',
+  close: '<path d="M6 6l12 12M18 6L6 18"/>',
+  book: '<path d="M5 4.5h10.5A3.5 3.5 0 0 1 19 8v12H8.5A3.5 3.5 0 0 1 5 16.5z"/><path d="M5 16.5A3.5 3.5 0 0 1 8.5 13H19"/>',
+  clock: '<circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/>',
+  sliders: '<path d="M4 7h9M17 7h3M4 17h3M11 17h9"/><circle cx="15" cy="7" r="2"/><circle cx="9" cy="17" r="2"/>',
+  camera: '<path d="M4 8.5h3l1.8-2.5h6.4L17 8.5h3V19H4z"/><circle cx="12" cy="13.5" r="3.3"/>',
+  image: '<rect x="3.5" y="5" width="17" height="14" rx="2"/><circle cx="9" cy="10" r="1.6"/><path d="M20.5 15.5l-4.5-4.5-8 8"/>',
+  trash: '<path d="M4.5 7h15M9.5 7V4.5h5V7M6.5 7l1 12.5h9l1-12.5"/>', edit: '<path d="M4.5 19.5h4l10-10-4-4-10 10z"/>',
+  share: '<path d="M12 3.5v11M7.5 8L12 3.5 16.5 8M5 13.5v6h14v-6"/>',
+  shareIOS: '<path d="M12 3v12M8 7l4-4 4 4"/><path d="M8.5 10.5H6.5A1.5 1.5 0 0 0 5 12v7.5A1.5 1.5 0 0 0 6.5 21h11a1.5 1.5 0 0 0 1.5-1.5V12a1.5 1.5 0 0 0-1.5-1.5h-2"/>',
+  addHome: '<rect x="4" y="4" width="16" height="16" rx="4"/><path d="M12 8.5v7M8.5 12h7"/>',
+  dotsH: '<circle cx="5.5" cy="12" r="1.4" fill="currentColor"/><circle cx="12" cy="12" r="1.4" fill="currentColor"/><circle cx="18.5" cy="12" r="1.4" fill="currentColor"/>',
+  dotsV: '<circle cx="12" cy="5.5" r="1.4" fill="currentColor"/><circle cx="12" cy="12" r="1.4" fill="currentColor"/><circle cx="12" cy="18.5" r="1.4" fill="currentColor"/>',
+  toggle: '<rect x="2.5" y="7" width="19" height="10" rx="5"/><circle cx="16.5" cy="12" r="3" fill="currentColor"/>',
+  phone: '<rect x="7" y="2.5" width="10" height="19" rx="2.2"/><path d="M11 18.5h2"/>',
+  copy: '<rect x="8.5" y="8.5" width="11" height="11" rx="2"/><path d="M15.5 8.5V6A1.5 1.5 0 0 0 14 4.5H6A1.5 1.5 0 0 0 4.5 6v8A1.5 1.5 0 0 0 6 15.5h2.5"/>',
+  store: '<path d="M4.5 10.5V20h15v-9.5"/><path d="M3.5 10.5L5.5 4.5h13l2 6z"/><path d="M9.5 20v-5h5v5"/>',
+  home: '<path d="M4.5 11L12 4.5l7.5 6.5V20h-5v-5.5h-5V20h-5z"/>', check: '<path d="M5 12.5l4.5 4.5L19 7.5"/>',
+  undo: '<path d="M9 14.5L4.5 10 9 5.5"/><path d="M4.5 10H14a5.5 5.5 0 0 1 0 11h-3"/>',
+  shuffle: '<path d="M16 4h4v4M4 19L20 4M20 16v4h-4M14.5 14.5L20 20M4 5l5 5"/>',
+  users: '<circle cx="9" cy="8.5" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0"/><path d="M16 5a3.5 3.5 0 0 1 0 7M18 14.2A6 6 0 0 1 21.5 20"/>',
+  download: '<path d="M12 4v11M7.5 10.5L12 15l4.5-4.5M5 20h14"/>',
+  bell: '<path d="M6 16.5V11a6 6 0 0 1 12 0v5.5l1.5 2h-15z"/><path d="M10 20.5a2 2 0 0 0 4 0"/>',
+  eye: '<path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12z"/><circle cx="12" cy="12" r="3"/>',
+  crown: '<path d="M4 18h16M5 15l-1.5-8 5 4L12 5l3.5 6 5-4L19 15z"/>'
+};
+const FILLED = {
+  star: '<path d="M12 2.8l2.8 5.9 6.4.8-4.7 4.4 1.2 6.4L12 17.2l-5.7 3.1 1.2-6.4-4.7-4.4 6.4-.8z"/>',
+  sparkle: '<path d="M10.5 2.5l2.1 5.9 5.9 2.1-5.9 2.1-2.1 5.9-2.1-5.9-5.9-2.1 5.9-2.1z"/><path d="M18.5 14l1 2.5 2.5 1-2.5 1-1 2.5-1-2.5-2.5-1 2.5-1z"/>'
+};
+function ic(n, s = 20) {
+  if (FILLED[n]) return `<svg class="ic" width="${s}" height="${s}" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">${FILLED[n]}</svg>`;
+  return `<svg class="ic" width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICONS[n] || ""}</svg>`;
+}
+const BRAND = s => `<svg width="${s}" height="${s}" viewBox="0 0 40 40" aria-hidden="true"><rect width="40" height="40" rx="12" fill="#EA1D2C"/><circle cx="20" cy="21" r="10.5" fill="none" stroke="#fff" stroke-width="2.6"/><path d="M20 26.2l-4.3-4.1a2.6 2.6 0 0 1 4.3-2.9 2.6 2.6 0 0 1 4.3 2.9z" fill="#fff"/></svg>`;
+function starsHTML(v, size = 13) {
+  const w = v == null ? 0 : Math.max(0, Math.min(100, v / 5 * 100));
+  const row = ic("star", size).repeat(5);
+  return `<span class="stars" role="img" aria-label="${v == null ? "Sem avaliação" : fmt1(v) + " de 5 estrelas"}"><span class="st-base">${row}</span><span class="st-top" style="width:${w}%">${row}</span></span>`;
+}
+
+/* ============================== Estado ============================== */
+const S = {
+  uid: null, nome: "", screen: "splash", fatal: null,
+  meus: {}, cur: null, card: null, pratos: {}, loaded: { card: false, pratos: false },
+  tab: "cardapio", search: "", activeCat: null, slow: false, subErr: "", missing: false, nameSynced: false,
+  histRange: "90", histLimit: 30, detail: null, cardScroll: 0, channel: null, rtOK: false, pollT: null
+};
+/* Tabelas espelhadas do Supabase (só do cardápio aberto) */
+const T = { cardapios: new Map(), membros: new Map(), categorias: new Map(), pratos: new Map(), notas: new Map(), feitos: new Map(), fotos: new Map() };
+const PK = { cardapios: ["codigo"], membros: ["cardapio", "user_id"], categorias: ["id"], pratos: ["id"], notas: ["prato_id", "user_id"], feitos: ["id"], fotos: ["prato_id"] };
+const keyOf = (t, r) => PK[t].map(k => r[k]).join("|");
+const put = (t, r) => { if (r) T[t].set(keyOf(t, r), r); };
+function dropPrato(id) {
+  T.pratos.delete(id); T.fotos.delete(id);
+  for (const [k, n] of T.notas) if (n.prato_id === id) T.notas.delete(k);
+  for (const [k, f] of T.feitos) if (f.prato_id === id) T.feitos.delete(k);
+}
+/* Monta o formato usado pela interface a partir das tabelas */
+function compose() {
+  const c = T.cardapios.get(S.cur);
+  if (!c) S.card = null;
+  else {
+    const membros = {}; T.membros.forEach(m => { membros[m.user_id] = { nome: m.nome, papel: m.papel, ts: tsOf(m.criado_em) }; });
+    const categorias = {}; T.categorias.forEach(k => { categorias[k.id] = { nome: k.nome, icone: k.icone, ordem: k.ordem }; });
+    S.card = { codigo: c.codigo, nome: c.nome, dono: c.dono, membros, categorias };
+  }
+  const pr = {};
+  T.pratos.forEach(p => {
+    const f = T.fotos.get(p.id);
+    pr[p.id] = { nome: p.nome, origem: p.origem, restaurante: p.restaurante || "", categorias: p.categorias || [], foto: f ? f.data : null,
+      quiz: { tempo: p.tempo, peso: p.peso, sabor: p.sabor, ocasiao: p.ocasiao }, notas: {}, feitos: {}, criadoPor: p.criado_por, criadoEm: tsOf(p.criado_em) || Date.now() };
+  });
+  T.notas.forEach(n => { if (pr[n.prato_id]) pr[n.prato_id].notas[n.user_id] = n.nota; });
+  T.feitos.forEach(f => { if (pr[f.prato_id]) pr[f.prato_id].feitos[f.id] = { d: String(f.data).slice(0, 10), por: f.por, ts: tsOf(f.criado_em) }; });
+  S.pratos = pr;
+}
+function changed() { compose(); scheduleRender(); }
+
+/* ============================== Supabase ============================== */
+let sb = null;
+const isNet = e => /Failed to fetch|NetworkError|Load failed|network|fetch failed/i.test(String((e && e.message) || ""));
+async function q(builder) { const r = await builder; if (r.error) throw r.error; return r.data; }
+async function q2(fn) { try { return await q(fn()); } catch (e) { if (isNet(e)) { await sleep(700); return await q(fn()); } throw e; } }
+function errMsg(e) {
+  const m = String((e && (e.message || e.error_description || e.msg)) || "");
+  const c = e && e.code;
+  if (/Só o dono/.test(m)) return "Só o dono pode fazer isso.";
+  if (c === "42501" || /row-level security|permission denied/i.test(m)) return "Você não tem permissão para isso neste cardápio.";
+  if (c === "23505") return "Isso já existe.";
+  if (isNet(e)) return "Sem conexão com o servidor. Confira a internet e tente de novo.";
+  if (/JWT|token|session/i.test(m)) return "Sua sessão expirou. Feche e abra o app de novo.";
+  return "Não deu certo: " + (m || "tente de novo").slice(0, 140);
+}
+async function act(fn, opts = {}) {
+  try { await fn(); return true; }
+  catch (e) { console.warn(e); if (!opts.silent) toast(opts.msg || errMsg(e)); return false; }
+}
+
+/* ============================== Painéis, avisos, diálogos ============================== */
+const sheetStack = [];
+function lockScroll() { document.documentElement.classList.toggle("locked", sheetStack.length > 0); }
+function openSheet({ html, cls = "", onClose }) {
+  const wrap = document.createElement("div");
+  wrap.className = "sheet-wrap";
+  wrap.style.zIndex = String(60 + sheetStack.length * 2);
+  wrap.innerHTML = `<div class="sheet-bg"></div><div class="sheet ${cls}" role="dialog" aria-modal="true">${html}</div>`;
+  document.body.appendChild(wrap);
+  const s = { wrap, el: wrap.querySelector(".sheet"), onClose };
+  sheetStack.push(s);
+  lockScroll();
+  wrap.querySelector(".sheet-bg").addEventListener("click", () => closeSheet(s));
+  requestAnimationFrame(() => requestAnimationFrame(() => wrap.classList.add("open")));
+  return s;
+}
+function closeSheet(s) {
+  s = s || sheetStack[sheetStack.length - 1];
+  if (!s) return;
+  const i = sheetStack.indexOf(s);
+  if (i < 0) return;
+  sheetStack.splice(i, 1);
+  s.wrap.classList.remove("open");
+  setTimeout(() => s.wrap.remove(), 260);
+  const cb = s.onClose; s.onClose = null;
+  if (cb) cb();
+  lockScroll();
+}
+function closeAllSheets() { while (sheetStack.length) closeSheet(sheetStack[sheetStack.length - 1]); }
+document.addEventListener("keydown", e => { if (e.key === "Escape" && sheetStack.length) closeSheet(); });
+
+let toastT = null;
+function toast(msg, opt = {}) {
+  const t = $("#toast");
+  t.innerHTML = `<span>${esc(msg)}</span>${opt.action ? `<button class="toast-act">${esc(opt.action)}</button>` : ""}`;
+  t.classList.add("show");
+  clearTimeout(toastT);
+  toastT = setTimeout(() => t.classList.remove("show"), opt.ms || (opt.action ? 6000 : 3200));
+  if (opt.action) t.querySelector(".toast-act").onclick = () => { t.classList.remove("show"); opt.onAction && opt.onAction(); };
+}
+function confirmDlg({ title, text, ok = "Confirmar", danger = false }) {
+  return new Promise(res => {
+    const s = openSheet({ cls: "dialog", onClose: () => res(false), html: `<div class="dlg"><h3>${esc(title)}</h3>${text ? `<p>${esc(text)}</p>` : ""}<div class="row2"><button class="btn btn-ghost" data-x="no">Cancelar</button><button class="btn ${danger ? "btn-danger" : "btn-red"}" data-x="ok">${esc(ok)}</button></div></div>` });
+    s.el.querySelector('[data-x="ok"]').onclick = () => { s.onClose = null; closeSheet(s); res(true); };
+    s.el.querySelector('[data-x="no"]').onclick = () => closeSheet(s);
+  });
+}
+function textSheet({ title, label, value = "", placeholder = "", ok = "Salvar", max = 40, emoji = null }) {
+  return new Promise(res => {
+    let em = emoji;
+    const s = openSheet({ onClose: () => res(null), html: `
+      <div class="sheet-head"><h3>${esc(title)}</h3><button class="icon-btn" data-x="close" aria-label="Fechar">${ic("close")}</button></div>
+      <form class="sheet-body" id="tsForm" style="display:flex;flex-direction:column;gap:14px">
+        <div><label class="lbl" for="tsInp">${esc(label)}</label><input id="tsInp" class="inp" maxlength="${max}" value="${esc(value)}" placeholder="${esc(placeholder)}" autocomplete="off"></div>
+        ${em ? `<div><span class="lbl">Ícone</span><div class="emoji-grid">${EMOJIS.map(x => `<button type="button" data-x="em" data-v="${x}" aria-pressed="${x === em}">${x}</button>`).join("")}</div></div>` : ""}
+        <button class="btn btn-red btn-lg" type="submit">${esc(ok)}</button>
+      </form>` });
+    const inp = $("#tsInp", s.el);
+    setTimeout(() => { inp.focus(); inp.select(); }, 280);
+    s.el.addEventListener("click", e => {
+      const b = e.target.closest("[data-x]"); if (!b) return;
+      if (b.dataset.x === "close") closeSheet(s);
+      if (b.dataset.x === "em") { em = b.dataset.v; $$('[data-x="em"]', s.el).forEach(x => x.setAttribute("aria-pressed", String(x.dataset.v === em))); }
+    });
+    $("#tsForm", s.el).addEventListener("submit", e => { e.preventDefault(); const v = inp.value.trim(); s.onClose = null; closeSheet(s); res({ value: v, emoji: em }); });
+  });
+}
+async function copyText(text, okMsg) {
+  try { await navigator.clipboard.writeText(text); toast(okMsg); return; } catch (e) {}
+  try {
+    const ta = document.createElement("textarea");
+    ta.value = text; ta.setAttribute("readonly", ""); ta.style.position = "fixed"; ta.style.opacity = "0"; ta.style.top = "0";
+    document.body.appendChild(ta); ta.select(); ta.setSelectionRange(0, text.length);
+    const ok = document.execCommand("copy"); ta.remove();
+    if (ok) { toast(okMsg); return; }
+  } catch (e) {}
+  const s = openSheet({ html: `<div class="sheet-head"><h3>Copie a mensagem</h3><button class="icon-btn" data-x="close" aria-label="Fechar">${ic("close")}</button></div><div class="sheet-body"><p class="muted" style="margin-bottom:10px">Não consegui copiar sozinho. Segure o texto abaixo e toque em Copiar.</p><textarea class="copybox" id="cpBox" readonly>${esc(text)}</textarea></div>` });
+  s.el.querySelector('[data-x="close"]').onclick = () => closeSheet(s);
+  setTimeout(() => { const b = $("#cpBox", s.el); if (b) { b.focus(); b.select(); } }, 300);
+}
+const appUrl = () => location.href.split("#")[0].split("?")[0];
+const shareText = code => `Criei nosso cardápio no ${APP_NAME}! Abre o link e digita o código ${code}\n${appUrl()}`;
+const waHref = code => "https://wa.me/?text=" + encodeURIComponent(shareText(code));
+async function shareCode(code) {
+  const text = shareText(code);
+  if (navigator.share) {
+    try { await navigator.share({ text }); return; }
+    catch (e) { if (e && e.name === "AbortError") return; }
+  }
+  copyText(text, "Mensagem copiada. É só colar no WhatsApp.");
+}
+
+/* ============================== Tutorial de instalação ============================== */
+function tutStep(n, icon, cls, html, sub) {
+  return `<li class="tut-step"><span class="tut-n">${n}</span><span class="tut-txt"><span>${html}</span>${sub ? `<small>${sub}</small>` : ""}</span><span class="tut-ico ${cls}">${icon}</span></li>`;
+}
+const K = s => `<span class="tut-key">${s}</span>`;
+function stepsIOS() {
+  if (iosBrowser() !== "safari") {
+    return tutStep(1, ic("shareIOS", 24), "", `Toque no ícone de ${K("compartilhar")} ao lado do endereço, no alto da tela.`, "No Chrome do iPhone ele fica no canto direito da barra de endereço.")
+      + tutStep(2, ic("addHome", 24), "", `Toque em ${K("Adicionar à Tela de Início")}.`, "Não achou? Role a lista ou toque em Ver mais.")
+      + tutStep(3, ic("check", 24), "", `Toque em ${K("Adicionar")}.`)
+      + tutStep(4, BRAND(26), "", `Abra o <b>${APP_NAME}</b> pelo ícone na tela de início.`, "Se não funcionar, copie o link e abra no Safari.");
+  }
+  return tutStep(1, ic("dotsH", 24), "", `No Safari, toque em ${K("⋯")} (três pontinhos) no canto de baixo, à direita.`, "Se a sua barra já mostra o ícone de compartilhar (quadrado com seta), toque nele e pule para o passo 3.")
+    + tutStep(2, ic("shareIOS", 24), "", `Toque em ${K("Compartilhar")}.`)
+    + tutStep(3, ic("addHome", 24), "", `Toque em ${K("Adicionar à Tela de Início")}.`, "Não achou? Toque em Ver mais ou role a lista para baixo.")
+    + tutStep(4, ic("toggle", 24), "", `Deixe ${K("Abrir como App Web")} ligado e toque em ${K("Adicionar")}.`)
+    + tutStep(5, BRAND(26), "", `Feche o Safari e abra o <b>${APP_NAME}</b> pelo ícone na tela de início.`);
+}
+function stepsAndroid() {
+  return tutStep(1, ic("dotsV", 24), "and", `No Chrome, toque em ${K("⋮")} (três pontinhos) no canto de cima, à direita.`)
+    + tutStep(2, ic("addHome", 24), "and", `Toque em ${K("Instalar app")}.`, "Em alguns celulares aparece Adicionar à tela inicial.")
+    + tutStep(3, ic("check", 24), "and", `Confirme em ${K("Instalar")} (ou ${K("Adicionar")}).`)
+    + tutStep(4, BRAND(26), "and", `Abra o <b>${APP_NAME}</b> pelo ícone na tela inicial.`, "No Samsung Internet: menu ☰ → Adicionar página a → Tela inicial.");
+}
+function openTutorial(opts = {}) {
+  let plat = isAndroid ? "android" : "ios";
+  const s = openSheet({ cls: "full", html: `<div class="tut" id="tut"></div>`, onClose: () => LS.set("pd:tutorial", "1") });
+  const el = s.el;
+  const paint = () => {
+    if (isStandalone()) {
+      $("#tut", el).innerHTML = `<div class="sheet-head"><h3>Instalar no celular</h3><button class="icon-btn" data-x="close" aria-label="Fechar">${ic("close")}</button></div>
+        <div class="tut-scroll"><div class="tut-ok"><div class="ok-ic">${ic("check", 30)}</div><h2>Tudo certo!</h2><p class="muted">Você já está usando o ${APP_NAME} instalado, como aplicativo.</p></div></div>
+        <div class="tut-foot"><button class="btn btn-red btn-lg" data-x="close">Fechar</button></div>`;
+      return;
+    }
+    $("#tut", el).innerHTML = `<div class="sheet-head"><h3>Instalar no celular</h3><button class="icon-btn" data-x="close" aria-label="Fechar">${ic("close")}</button></div>
+      <div class="tut-scroll">
+        <div class="tut-hero">${BRAND(52)}<h2>Coloque o ${APP_NAME} na tela de início</h2><p>Assim ele abre como um aplicativo, em tela cheia e sem a barra do navegador.</p></div>
+        ${isIOS && opts.first ? `<div class="banner banner-warn" style="margin:0 0 12px;width:100%">${ic("bell", 18)}<span class="grow">No iPhone, instale <b>antes</b> de criar ou entrar num cardápio. O app instalado guarda os dados separado do Safari.</span></div>` : ""}
+        ${!isMobile ? `<div class="banner banner-info" style="margin:0 0 12px;width:100%">${ic("phone", 18)}<span class="grow">Você está num computador. Abra este link no celular para instalar: <b>${esc(appUrl())}</b></span><button class="btn btn-sm btn-ghost" data-x="copyUrl">Copiar</button></div>` : ""}
+        <button class="btn btn-red btn-lg" id="instNow" data-x="install" ${installPrompt ? "" : "hidden"} style="margin-bottom:12px">${ic("download", 20)} Instalar agora</button>
+        <div class="tut-tabs"><div class="seg-pill" role="group" aria-label="Tipo de celular" style="margin:0"><button data-x="plat" data-v="ios" aria-pressed="${plat === "ios"}">iPhone</button><button data-x="plat" data-v="android" aria-pressed="${plat === "android"}">Android</button></div></div>
+        <ol class="tut-steps">${plat === "ios" ? stepsIOS() : stepsAndroid()}</ol>
+      </div>
+      <div class="tut-foot"><button class="btn btn-red btn-lg" data-x="done">Pronto, já instalei</button><button class="btn btn-text" data-x="close">${opts.first ? "Agora não, continuar no navegador" : "Fechar"}</button></div>`;
+  };
+  el.addEventListener("click", async e => {
+    const b = e.target.closest("[data-x]"); if (!b) return;
+    const x = b.dataset.x;
+    if (x === "close") closeSheet(s);
+    else if (x === "plat") { plat = b.dataset.v; paint(); }
+    else if (x === "copyUrl") copyText(appUrl(), "Link copiado");
+    else if (x === "install" && installPrompt) {
+      try { installPrompt.prompt(); const r = await installPrompt.userChoice; if (r && r.outcome === "accepted") { closeSheet(s); } } catch (err) {}
+      installPrompt = null;
+    }
+    else if (x === "done") { closeSheet(s); if (!isStandalone()) toast(`Agora abra o ${APP_NAME} pelo ícone na tela de início.`, { ms: 6000 }); }
+  });
+  paint();
+}
+function maybeTutorial() {
+  if (isStandalone() || !isMobile || LS.get("pd:tutorial")) return;
+  setTimeout(() => openTutorial({ first: true }), 350);
+}
+
+/* ============================== Inicialização ============================== */
+function fatal(title, text, retry) { S.screen = "fatal"; S.fatal = { title, text, retry }; render(); }
+async function boot() {
+  render();
+  if (isStandalone()) lockPortrait();
+  const url = String(CFG.supabaseUrl || "").trim(), key = String(CFG.supabaseKey || "").trim();
+  if (!/^https?:\/\/[^ ]+$/.test(url) || !key || /COLE_AQUI/.test(url + key)) {
+    return fatal("Falta configurar o app", "Abra o arquivo config.js no GitHub e cole a Project URL e a Publishable key do Supabase. O passo a passo está no guia de implantação.");
+  }
+  if (!window.supabase || !window.supabase.createClient) return fatal("Sem conexão", "Não consegui carregar o app. Confira a internet e tente de novo.", true);
+  try {
+    sb = window.supabase.createClient(url, key, { auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: false, storageKey: "pd-auth" } });
+  } catch (e) { return fatal("Configuração inválida", "Confira a Project URL e a chave no config.js."); }
+  let session = null;
+  try { const r = await sb.auth.getSession(); session = r.data && r.data.session; } catch (e) {}
+  if (!session) {
+    const r = await sb.auth.signInAnonymously();
+    if (r.error) {
+      const m = String(r.error.message || "");
+      if (/anonymous/i.test(m)) return fatal("Falta um ajuste no Supabase", "Ative “Allow anonymous sign-ins” em Authentication → Sign In / Providers. Está no passo 2 do guia de implantação.");
+      if (/Invalid API key|apikey|No API key/i.test(m)) return fatal("Chave inválida", "A Publishable key do config.js não confere com o projeto. Copie de novo no Supabase.");
+      return fatal("Não consegui entrar", errMsg(r.error), true);
+    }
+    session = r.data.session;
+  }
+  S.uid = session.user.id;
+  S.nome = LS.get("pd:nome") || "";
+  S.meus = LS.json("pd:meus") || {};
+  if (!S.nome) { S.screen = "onboard"; render(); maybeTutorial(); return; }
+  goHome();
+  maybeTutorial();
+}
+document.addEventListener("visibilitychange", () => {
+  if (document.visibilityState !== "visible" || !sb || !S.uid) return;
+  if (S.screen === "card" && S.cur) refreshNow(false);
+  else if (S.screen === "home") refreshMeus();
+});
+function saveMeus() { LS.set("pd:meus", JSON.stringify(S.meus)); }
+function setMeu(code, info, touch) {
+  const next = Object.assign({}, S.meus[code] || {}, info);
+  if (touch) next.ts = Date.now();
+  S.meus[code] = next; saveMeus();
+}
+
+/* ============================== Renderização ============================== */
+let rafPending = false;
+function scheduleRender() {
+  if (rafPending) return;
+  rafPending = true;
+  requestAnimationFrame(() => { rafPending = false; if (S.screen === "card") renderCardScreen(false); renderDetail(); });
+}
+function render() {
+  const v = $("#view");
+  const showNav = S.screen === "card";
+  $("#bnav").hidden = !showNav;
+  v.classList.toggle("noNav", !showNav);
+  if (S.screen !== "card") $("#fabs").hidden = true;
+  if (S.screen === "splash") v.innerHTML = `<div class="center-screen">${BRAND(64)}<div class="loader" aria-label="Carregando"></div></div>`;
+  else if (S.screen === "fatal") v.innerHTML = `<div class="center-screen">${BRAND(56)}<h2>${esc(S.fatal.title)}</h2><p class="muted">${esc(S.fatal.text)}</p>${S.fatal.retry ? `<button class="btn btn-red" data-act="reload">Tentar de novo</button>` : ""}</div>`;
+  else if (S.screen === "onboard") { v.innerHTML = viewOnboard(); }
+  else if (S.screen === "home") v.innerHTML = viewHome();
+  else if (S.screen === "card") renderCardScreen(true);
+}
+function viewOnboard() {
+  return `<div class="onb">
+    <div class="onb-art">${BRAND(84)}</div>
+    <h1 class="onb-title">${APP_NAME}</h1>
+    <p class="onb-sub">Guardem os pratos que vocês já fizeram ou pediram e nunca mais fiquem sem ideia do que comer.</p>
+    <form id="onbForm" class="onb-form">
+      <label for="onbName" class="lbl">Como você se chama?</label>
+      <input id="onbName" class="inp" maxlength="30" placeholder="Seu primeiro nome" autocomplete="given-name" enterkeyhint="go">
+      <p class="err" id="onbErr"></p>
+      <button class="btn btn-red btn-lg" type="submit">Começar</button>
+    </form>
+    <p class="onb-note">Sem login nem senha. Seu nome fica salvo neste celular.</p>
+    ${!isStandalone() && isMobile ? `<button class="link-btn" data-act="tutorial">Como instalar como aplicativo</button>` : ""}
+  </div>`;
+}
+function viewHome() {
+  const list = Object.entries(S.meus).sort((a, b) => ((b[1].ts || 0) - (a[1].ts || 0)));
+  return `<div class="home">
+    <header class="home-top"><div class="brand">${BRAND(34)}<span>${APP_NAME}</span></div></header>
+    <div class="home-hello"><h1>Oi, ${esc(S.nome)}!</h1><p>Bora decidir o que comer?</p></div>
+    <div class="home-actions">
+      <button class="hact hact-red" data-act="create"><span class="hact-ic">${ic("plus", 22)}</span><span><b>Criar cardápio novo</b><small>Para você e seu par cadastrarem juntos</small></span></button>
+      <button class="hact" data-act="join"><span class="hact-ic">${ic("users", 22)}</span><span><b>Entrar com código</b><small>Recebeu um código de 5 letras e números?</small></span></button>
+    </div>
+    ${!isStandalone() ? `<button class="install-chip" data-act="tutorial">${ic("phone", 20)}<span>Instale o ${APP_NAME} na tela de início para usar como aplicativo</span>${ic("chevR", 18)}</button>` : ""}
+    <h2 class="h2">Meus cardápios</h2>
+    ${list.length ? `<div class="mylist">${list.map(([code, m]) => `
+      <button class="myitem" data-act="open" data-code="${esc(code)}">
+        <span class="my-logo">${esc((m.nome || "?").trim().charAt(0).toUpperCase() || "?")}</span>
+        <span class="my-info"><b>${esc(m.nome || "Cardápio")}</b><small>${esc(code)}</small></span>
+        ${m.papel === "dono" && m.pend ? `<span class="my-badge">${m.pend} ${m.pend === 1 ? "pedido" : "pedidos"}</span>` : ""}
+        <span class="role role-${esc(m.papel || "leitor")}">${esc(ROLE_LABEL[m.papel] || "Leitor")}</span>
+        <span class="muted">${ic("chevR", 18)}</span>
+      </button>`).join("")}</div>`
+      : `<p class="empty-sm">Nenhum cardápio por aqui ainda. Crie o de vocês ou entre com o código que te mandaram.</p>`}
+    <button class="link-btn" data-act="rename-me">Não é ${esc(S.nome)}? Trocar nome</button>
+  </div>`;
+}
+function goHome() {
+  unsubscribe();
+  S.cur = null; S.card = null; S.pratos = {}; S.screen = "home";
+  Object.values(T).forEach(m => m.clear());
+  window.scrollTo(0, 0);
+  render();
+  refreshMeus();
+}
+let meusBusy = false;
+async function refreshMeus() {
+  if (meusBusy || !sb) return; meusBusy = true;
+  try {
+    const rows = await q2(() => sb.from("membros").select("cardapio,papel").eq("user_id", S.uid));
+    const codes = rows.map(r => r.cardapio);
+    const cards = codes.length ? await q2(() => sb.from("cardapios").select("codigo,nome").in("codigo", codes)) : [];
+    const donos = rows.filter(r => r.papel === "dono").map(r => r.cardapio);
+    const pend = donos.length ? await q2(() => sb.from("membros").select("cardapio").in("cardapio", donos).eq("papel", "pendente")) : [];
+    const next = {};
+    rows.forEach(r => {
+      const c = cards.find(x => x.codigo === r.cardapio);
+      next[r.cardapio] = { nome: c ? c.nome : r.cardapio, papel: r.papel, pend: pend.filter(x => x.cardapio === r.cardapio).length, ts: (S.meus[r.cardapio] || {}).ts || 0 };
+    });
+    S.meus = next; saveMeus();
+  } catch (e) { console.warn("meus", e); }
+  meusBusy = false;
+  if (S.screen === "home" && !sheetStack.length) render();
+}
+
+/* ---------- Abrir um cardápio, ler e acompanhar ---------- */
+const TBL = ["cardapios", "membros", "categorias", "pratos", "notas", "feitos"];
+function openCardapio(code) {
+  unsubscribe();
+  closeAllSheets();
+  Object.values(T).forEach(m => m.clear());
+  Object.assign(S, { cur: code, card: null, pratos: {}, loaded: { card: false, pratos: false }, tab: "cardapio", search: "", activeCat: null, slow: false, subErr: "", missing: false, nameSynced: false, histLimit: 30, cardScroll: 0 });
+  S.screen = "card";
+  setMeu(code, {}, true);
+  window.scrollTo(0, 0);
+  render();
+  clearTimeout(S.slowT);
+  S.slowT = setTimeout(() => { if (S.cur === code && !S.loaded.pratos) { S.slow = true; scheduleRender(); } }, 10000);
+  subscribe(code);
+  loadAll(code);
+}
+async function loadAll(code) {
+  try {
+    const col = t => t === "cardapios" ? "codigo" : "cardapio";
+    const res = await Promise.all(TBL.map(t => q2(() => sb.from(t).select("*").eq(col(t), code))));
+    if (S.cur !== code) return;
+    TBL.forEach((t, i) => { T[t].clear(); res[i].forEach(r => put(t, r)); });
+    S.loaded.card = S.loaded.pratos = true; S.slow = false; S.subErr = "";
+    S.missing = !T.cardapios.get(code);
+    if (S.missing) { delete S.meus[code]; saveMeus(); }
+    else {
+      const me = T.membros.get(code + "|" + S.uid);
+      setMeu(code, { nome: T.cardapios.get(code).nome, papel: me ? me.papel : "visitante", pend: Array.from(T.membros.values()).filter(m => m.papel === "pendente").length });
+      if (me && me.nome !== S.nome && !S.nameSynced) { S.nameSynced = true; act(() => q(sb.rpc("renomear_me", { p_nome: S.nome })), { silent: true }); }
+    }
+    changed();
+    await loadFotos(code);
+  } catch (e) {
+    console.warn("carregar", e);
+    if (S.cur !== code) return;
+    S.subErr = errMsg(e); scheduleRender();
+  }
+}
+async function loadFotos(code) {
+  const meta = await q2(() => sb.from("fotos").select("prato_id,atualizado_em").eq("cardapio", code));
+  if (S.cur !== code) return;
+  const want = new Set(meta.map(m => m.prato_id));
+  Array.from(T.fotos.keys()).forEach(k => { if (!want.has(k)) T.fotos.delete(k); });
+  const need = meta.filter(m => { const c = T.fotos.get(m.prato_id); return !c || c.atualizado_em !== m.atualizado_em; }).map(m => m.prato_id);
+  for (let i = 0; i < need.length; i += 15) {
+    const chunk = need.slice(i, i + 15);
+    const rows = await q2(() => sb.from("fotos").select("*").in("prato_id", chunk));
+    if (S.cur !== code) return;
+    rows.forEach(r => put("fotos", r));
+    changed();
+  }
+  if (!need.length) changed();
+}
+async function refetchFoto(id) {
+  const code = S.cur;
+  try { const rows = await q2(() => sb.from("fotos").select("*").eq("prato_id", id)); if (S.cur === code) { rows.forEach(r => put("fotos", r)); changed(); } } catch (e) {}
+}
+function subscribe(code) {
+  unsubscribe();
+  S.rtOK = false;
+  try {
+    const ch = sb.channel("pd-" + code + "-" + Math.random().toString(36).slice(2, 7));
+    ["membros", "categorias", "pratos", "notas", "feitos", "fotos"].forEach(t => {
+      ch.on("postgres_changes", { event: "INSERT", schema: "public", table: t, filter: "cardapio=eq." + code }, p => onRT(t, p, code));
+      ch.on("postgres_changes", { event: "UPDATE", schema: "public", table: t, filter: "cardapio=eq." + code }, p => onRT(t, p, code));
+      ch.on("postgres_changes", { event: "DELETE", schema: "public", table: t }, p => onRT(t, p, code));
+    });
+    ch.on("postgres_changes", { event: "UPDATE", schema: "public", table: "cardapios", filter: "codigo=eq." + code }, p => onRT("cardapios", p, code));
+    ch.subscribe(st => {
+      if (st === "SUBSCRIBED") { S.rtOK = true; stopPoll(); }
+      else if (st === "CHANNEL_ERROR" || st === "TIMED_OUT" || st === "CLOSED") { S.rtOK = false; if (S.cur === code) startPoll(); }
+    });
+    S.channel = ch;
+  } catch (e) { console.warn("realtime", e); }
+  S.rtT = setTimeout(() => { if (!S.rtOK && S.cur === code) startPoll(); }, 8000);
+}
+function onRT(t, p, code) {
+  if (S.cur !== code) return;
+  if (p.eventType === "DELETE") {
+    const k = keyOf(t, p.old || {});
+    if (T[t].has(k)) { if (t === "pratos") dropPrato(p.old.id); else T[t].delete(k); changed(); }
+    return;
+  }
+  const row = p.new; if (!row) return;
+  if (t === "cardapios") { if (row.codigo === code) { put(t, Object.assign({}, T.cardapios.get(code), row)); changed(); } return; }
+  if (row.cardapio !== code) return;
+  if (t === "fotos" && (typeof row.data !== "string" || row.data.indexOf("data:image/") !== 0)) { refetchFoto(row.prato_id); return; }
+  put(t, row); changed();
+}
+function startPoll() {
+  if (S.pollT) return;
+  S.pollT = setInterval(() => { if (document.visibilityState === "visible" && S.screen === "card" && S.cur) refreshNow(false); }, Number(CFG.pollMs) || 20000);
+}
+function stopPoll() { clearInterval(S.pollT); S.pollT = null; }
+function unsubscribe() {
+  if (S.channel && sb) { try { sb.removeChannel(S.channel); } catch (e) {} }
+  S.channel = null; S.rtOK = false; stopPoll(); clearTimeout(S.rtT); clearTimeout(S.slowT);
+}
+async function refreshNow(manual) {
+  if (!S.cur) return;
+  const btn = $('[data-act="refresh"]');
+  if (btn) btn.classList.add("spin");
+  await loadAll(S.cur);
+  const b = $('[data-act="refresh"]'); if (b) b.classList.remove("spin");
+  if (manual) toast(S.subErr ? S.subErr : "Cardápio atualizado");
+}
+
+/* ---------- Regras do cardápio ---------- */
+const papelOf = d => !d ? "visitante" : ((d.membros && d.membros[S.uid] && d.membros[S.uid].papel) || "visitante");
+const myPapel = () => papelOf(S.card);
+const canEdit = () => ["dono", "editor"].includes(myPapel());
+const isDono = () => myPapel() === "dono";
+const pendentes = d => Object.entries((d && d.membros) || {}).filter(([, m]) => m && m.papel === "pendente").map(([id, m]) => Object.assign({ id }, m));
+function memberName(id) {
+  const m = S.card && S.card.membros && S.card.membros[id];
+  if (m && m.nome) return m.nome;
+  return id === S.uid ? S.nome : "Alguém";
+}
+function catsSorted() {
+  const c = (S.card || {}).categorias || {};
+  return Object.entries(c).filter(([, v]) => v && v.nome).map(([id, v]) => ({ id, nome: v.nome, icone: v.icone || "🍴", ordem: v.ordem }))
+    .sort((a, b) => ((a.ordem ?? 999) - (b.ordem ?? 999)) || byName(a, b));
+}
+const pratosArr = () => Object.entries(S.pratos).filter(([, p]) => p && p.nome).map(([id, p]) => Object.assign({ id }, p));
+function catIcon(p) {
+  const cats = (S.card && S.card.categorias) || {};
+  for (const id of (p.categorias || [])) if (cats[id] && cats[id].icone) return cats[id].icone;
+  return "🍴";
+}
+function notasList(p) { return Object.entries(p.notas || {}).filter(([, v]) => typeof v === "number" && v >= 1 && v <= 5); }
+function media(p) { const l = notasList(p); return l.length ? l.reduce((a, [, v]) => a + v, 0) / l.length : null; }
+function feitosList(p) {
+  return Object.entries(p.feitos || {}).filter(([, v]) => v && /^\d{4}-\d{2}-\d{2}$/.test(v.d))
+    .map(([id, v]) => ({ id, d: v.d, por: v.por, ts: v.ts || 0 }))
+    .sort((a, b) => b.d.localeCompare(a.d) || (b.ts - a.ts));
+}
+const ultima = p => { const l = feitosList(p); return l.length ? l[0].d : null; };
+const hasQuiz = p => ATTRS.some(a => p.quiz && p.quiz[a.key]);
+function lastTxt(p) {
+  const s = ultima(p);
+  if (!s) return p.origem === "restaurante" ? "ainda não pedido" : "ainda não feito";
+  const n = daysAgo(s);
+  if (n <= 0) return "última vez hoje";
+  if (n === 1) return "última vez ontem";
+  if (n < 60) return `última vez há ${n} dias`;
+  if (n < 365) return `última vez há ${Math.round(n / 30)} meses`;
+  return "última vez há mais de 1 ano";
+}
+function groups(list) {
+  const cats = catsSorted();
+  const known = new Set(cats.map(c => c.id));
+  const out = cats.map(c => Object.assign({}, c, { items: list.filter(p => (p.categorias || []).includes(c.id)).sort(byName) })).filter(g => g.items.length);
+  const orphans = list.filter(p => !(p.categorias || []).some(id => known.has(id))).sort(byName);
+  if (orphans.length) out.push({ id: "_outros", nome: "Outros", icone: "🍴", items: orphans });
+  return out;
+}
+function restaurantes() {
+  const seen = new Map();
+  pratosArr().forEach(p => { if (p.origem === "restaurante" && p.restaurante) { const k = norm(p.restaurante); if (!seen.has(k)) seen.set(k, p.restaurante); } });
+  return Array.from(seen.values()).sort((a, b) => a.localeCompare(b, "pt-BR"));
+}
+const validFoto = f => typeof f === "string" && f.length < 400000 && /^data:image\/(jpeg|png|webp);base64,[A-Za-z0-9+/=]+$/.test(f);
+function thumb(p, cls) {
+  return `<span class="${cls}">${validFoto(p.foto) ? `<img src="${p.foto}" alt="" draggable="false">` : `<span class="ph" aria-hidden="true">${esc(catIcon(p))}</span>`}</span>`;
+}
+function origHTML(p) {
+  return p.origem === "restaurante"
+    ? `<span class="orig-rest">${ic("store", 14)}${esc(p.restaurante || "De restaurante")}</span>`
+    : `<span class="orig-home">Feito em casa</span>`;
+}
+function dishCard(p) {
+  const avg = media(p);
+  return `<button class="dish" data-act="dish" data-id="${esc(p.id)}">
+    <span class="dish-info">
+      <span class="dish-name">${esc(p.nome)}</span>
+      <span class="dish-orig">${origHTML(p)}</span>
+      <span class="dish-rate">${avg != null ? `${starsHTML(avg)}<b>${fmt1(avg)}</b>` : `<span class="muted">Sem avaliação</span>`}</span>
+      <span class="dish-last">${esc(lastTxt(p))}</span>
+    </span>
+    ${thumb(p, "dish-thumb")}
+  </button>`;
+}
+
+/* ---------- Tela do cardápio ---------- */
+function renderNav() {
+  const pend = isDono() ? pendentes(S.card).length : 0;
+  const items = [["cardapio", "book", "Cardápio"], ["historico", "clock", "Histórico"], ["config", "sliders", "Configurações"]];
+  $("#bnav").innerHTML = items.map(([k, i, l]) => `<button data-act="tab" data-tab="${k}" class="${S.tab === k ? "on" : ""}" aria-current="${S.tab === k ? "page" : "false"}">${ic(i, 22)}<span>${l}</span>${k === "config" && pend ? `<span class="nav-badge">${pend}</span>` : ""}</button>`).join("");
+}
+function renderFabs() {
+  const f = $("#fabs");
+  const show = S.screen === "card" && S.tab === "cardapio" && S.card && !S.missing;
+  f.hidden = !show;
+  if (!show) return;
+  f.innerHTML = `<button class="fab-quiz" data-act="quiz">${ic("sparkle", 20)}<span>O que vamos comer?</span></button>${canEdit() ? `<button class="fab-add" data-act="add" aria-label="Cadastrar prato">${ic("plus", 26)}</button>` : ""}`;
+}
+function renderCardScreen(full) {
+  const v = $("#view");
+  renderNav();
+  if (S.missing) {
+    v.innerHTML = `<div class="center-screen"><div class="empty-art">🍽</div><h2>Cardápio não encontrado</h2><p class="muted">O cardápio ${esc(S.cur)} não existe ou você não faz mais parte dele.</p><button class="btn btn-red" data-act="home">Voltar para meus cardápios</button></div>`;
+    $("#bnav").hidden = true; renderFabs(); return;
+  }
+  $("#bnav").hidden = false;
+  if (S.tab === "cardapio") {
+    if (full || !$("#sections")) {
+      v.innerHTML = shellCardapio();
+      const qi = $("#q");
+      qi.value = S.search;
+      qi.addEventListener("input", () => { S.search = qi.value; updateCardParts(); });
+    }
+    updateCardParts();
+  } else if (S.tab === "historico") v.innerHTML = viewHist();
+  else v.innerHTML = viewConfig();
+  renderFabs();
+}
+function shellCardapio() {
+  return `<section class="cover" id="cover"></section>
+    <div id="banners"></div>
+    <div class="search">${ic("search", 18)}<input id="q" type="search" placeholder="Buscar prato no cardápio" autocomplete="off" enterkeyhint="search" aria-label="Buscar prato pelo nome"></div>
+    <nav class="cattabs" id="cattabs" aria-label="Categorias"></nav>
+    <div id="sections"></div>`;
+}
+function updateCardParts() {
+  const cov = $("#cover"); if (!cov) return;
+  cov.innerHTML = coverHTML();
+  $("#banners").innerHTML = bannersHTML();
+  const list = pratosArr();
+  const tabs = $("#cattabs");
+  const gs = groups(list);
+  const searching = !!S.search.trim();
+  tabs.hidden = searching || !S.loaded.pratos || (!gs.length && !canEdit());
+  if (!S.activeCat || !gs.some(g => g.id === S.activeCat)) S.activeCat = gs[0] ? gs[0].id : null;
+  tabs.innerHTML = gs.map(g => `<button class="ctab ${g.id === S.activeCat ? "on" : ""}" data-act="tabcat" data-cat="${esc(g.id)}">${esc(g.nome)}</button>`).join("")
+    + (canEdit() ? `<button class="ctab ctab-add" data-act="newcat" aria-label="Criar categoria">${ic("plus", 20)}</button>` : "");
+  $("#sections").innerHTML = sectionsHTML(list, gs);
+}
+const BANNER_EMO = [["🍕", "8%", "14%"], ["🍣", "30%", "52%"], ["🍔", "58%", "8%"], ["🍝", "80%", "46%"], ["🥗", "92%", "4%"]];
+function coverHTML() {
+  const c = S.card;
+  const btns = `<div class="cover-btns"><button class="cover-btn" data-act="home">${ic("chevL", 20)}<span>Meus cardápios</span></button><button class="cover-btn round" data-act="refresh" aria-label="Atualizar">${ic("refresh", 19)}</button></div>`;
+  const banner = `<div class="cover-banner" aria-hidden="true">${BANNER_EMO.map(([e, l, t]) => `<span style="left:${l};top:${t}">${e}</span>`).join("")}</div>`;
+  if (!c) return btns + banner + `<div class="cover-card"><div class="cover-logo"></div><div class="skel" style="height:24px;width:60%;margin:4px auto"></div><div class="skel" style="height:14px;width:40%;margin:10px auto 0"></div></div>`;
+  const ps = pratosArr();
+  const avgs = ps.map(media).filter(x => x != null);
+  const g = avgs.length ? avgs.reduce((a, b) => a + b, 0) / avgs.length : null;
+  const pap = myPapel();
+  return btns + banner + `<div class="cover-card">
+    <div class="cover-logo">${esc((c.nome || "?").trim().charAt(0).toUpperCase())}</div>
+    <h1 class="cover-name">${esc(c.nome)}</h1>
+    <div class="cover-meta">
+      ${g != null ? `<span class="cover-rate">${ic("star", 15)} ${fmt1(g)}</span><span class="dot"></span>` : `<span>Sem avaliação</span><span class="dot"></span>`}
+      <span>${ps.length} ${ps.length === 1 ? "prato" : "pratos"}</span><span class="dot"></span>
+      <span class="role role-${esc(pap)}">${esc(ROLE_LABEL[pap])}</span>
+    </div></div>`;
+}
+function bannersHTML() {
+  let h = "";
+  if (S.subErr) h += `<div class="banner banner-red"><span class="grow">${esc(S.subErr)}</span><button class="btn btn-sm btn-ghost" data-act="retry">Tentar de novo</button></div>`;
+  else if (S.slow) h += `<div class="banner banner-warn"><span class="grow">Está demorando para carregar. Confira a internet.</span><button class="btn btn-sm btn-ghost" data-act="retry">Tentar de novo</button></div>`;
+  if (!S.card) return h;
+  const pap = myPapel();
+  if (pap === "dono") {
+    const n = pendentes(S.card).length;
+    if (n) h += `<button class="banner banner-warn" data-act="goto-config">${ic("bell", 18)}<span class="grow"><b>${n} ${n === 1 ? "pedido" : "pedidos"} para editar</b> esperando sua aprovação</span><b>Ver</b></button>`;
+  } else if (pap === "pendente") {
+    h += `<div class="banner banner-info">${ic("clock", 18)}<span class="grow">Pedido enviado. Assim que o dono aprovar, você poderá cadastrar e avaliar.</span></div>`;
+  } else if (pap === "leitor" || pap === "visitante") {
+    h += `<div class="banner banner-info">${ic("eye", 18)}<span class="grow">Você está só olhando este cardápio.</span><button class="btn btn-sm btn-red" data-act="request-edit">Pedir para editar</button></div>`;
+  }
+  return h;
+}
+function sectionsHTML(list, gs) {
+  if (!S.loaded.pratos) return [1, 2, 3].map(() => `<div class="dish"><span class="dish-info"><span class="skel" style="height:18px;width:60%"></span><span class="skel" style="height:14px;width:40%"></span><span class="skel" style="height:14px;width:50%"></span></span><span class="dish-thumb skel"></span></div>`).join("");
+  if (!list.length) {
+    return `<div class="empty"><div class="empty-art">🍳</div><h3>Nenhum prato ainda</h3><p>${canEdit() ? "Que tal cadastrar o último que vocês fizeram?" : "Quando os donos cadastrarem pratos, eles aparecem aqui."}</p>${canEdit() ? `<button class="btn btn-red" data-act="add">${ic("plus", 18)} Cadastrar prato</button>` : ""}</div>`;
+  }
+  const qs = norm(S.search);
+  if (qs) {
+    const found = list.filter(p => norm(p.nome).includes(qs) || norm(p.restaurante).includes(qs)).sort(byName);
+    if (!found.length) return `<div class="empty"><div class="empty-art">🔎</div><h3>Nada com “${esc(S.search.trim())}”</h3><p>Confira a grafia ou procure por outro nome.</p></div>`;
+    return `<section class="sec"><h2 class="sec-title">${found.length} ${found.length === 1 ? "resultado" : "resultados"}</h2>${found.map(dishCard).join("")}</section>`;
+  }
+  return gs.map(g => `<section class="sec" id="sec-${esc(g.id)}" data-cat="${esc(g.id)}"><h2 class="sec-title">${esc(g.nome)}</h2>${g.items.map(dishCard).join("")}</section>`).join("");
+}
+
+/* Abas que acompanham a rolagem */
+let spyLock = 0, spyRaf = false;
+function setActiveTab(id, scrollTabs) {
+  if (!id) return;
+  S.activeCat = id;
+  $$(".ctab[data-cat]").forEach(b => b.classList.toggle("on", b.dataset.cat === id));
+  if (scrollTabs) {
+    const b = $(`.ctab[data-cat="${CSS.escape(id)}"]`), bar = $("#cattabs");
+    if (b && bar) bar.scrollTo({ left: Math.max(0, b.offsetLeft - 24), behavior: reduceMotion() ? "auto" : "smooth" });
+  }
+}
+window.addEventListener("scroll", () => {
+  if (S.screen !== "card" || S.tab !== "cardapio" || spyRaf) return;
+  spyRaf = true;
+  requestAnimationFrame(() => {
+    spyRaf = false;
+    if (Date.now() < spyLock) return;
+    const bar = $("#cattabs"); if (!bar || bar.hidden) return;
+    const off = bar.getBoundingClientRect().bottom + 12;
+    let a = null;
+    for (const sec of $$(".sec[data-cat]")) { if (sec.getBoundingClientRect().top <= off) a = sec.dataset.cat; else break; }
+    if (!a) { const f = $(".sec[data-cat]"); a = f ? f.dataset.cat : null; }
+    if (a && a !== S.activeCat) setActiveTab(a, true);
+  });
+}, { passive: true });
+function scrollToCat(id) {
+  const sec = document.getElementById("sec-" + id), bar = $("#cattabs");
+  if (!sec || !bar) return;
+  setActiveTab(id, true);
+  spyLock = Date.now() + 900;
+  const top = parseFloat(getComputedStyle(bar).top) || 0;
+  const y = sec.getBoundingClientRect().top + window.scrollY - bar.offsetHeight - top + 1;
+  window.scrollTo({ top: y, behavior: reduceMotion() ? "auto" : "smooth" });
+}
+
+/* ---------- Histórico ---------- */
+function dayLabel(s) {
+  const n = daysAgo(s);
+  if (n === 0) return "Hoje";
+  if (n === 1) return "Ontem";
+  const [y, m, d] = s.split("-").map(Number);
+  return `${WD[new Date(y, m - 1, d).getDay()]}, ${fmtDate(s)}`;
+}
+function topbar(title) {
+  return `<div class="topbar"><button class="icon-btn" data-act="home" aria-label="Meus cardápios">${ic("chevL", 22)}</button><h1>${esc(title)}</h1><button class="icon-btn" data-act="refresh" aria-label="Atualizar">${ic("refresh", 20)}</button></div>`;
+}
+function tlRow(p, sub, right = "", left = "") {
+  return `<button class="tl-row" data-act="dish" data-id="${esc(p.id)}">${left}${thumb(p, "tl-thumb")}<span class="tl-txt"><b>${esc(p.nome)}</b><small>${esc(sub)}</small></span>${right}</button>`;
+}
+function viewHist() {
+  const ps = pratosArr();
+  if (!S.loaded.pratos) return topbar("Histórico") + `<div class="center-screen"><div class="loader"></div></div>`;
+  const events = [];
+  ps.forEach(p => feitosList(p).forEach(f => events.push(Object.assign({ p }, f))));
+  events.sort((a, b) => b.d.localeCompare(a.d) || (b.ts - a.ts));
+  const counts = ps.map(p => ({ p, n: feitosList(p).filter(f => S.histRange === "all" || daysAgo(f.d) < 90).length }))
+    .filter(x => x.n > 0).sort((a, b) => b.n - a.n || byName(a.p, b.p)).slice(0, 10);
+  const saudade = ps.map(p => {
+    const m = media(p); if (m == null || m < 4) return null;
+    const last = ultima(p);
+    const dias = last ? daysAgo(last) : Math.floor((Date.now() - (p.criadoEm || Date.now())) / 86400000);
+    return dias > 30 ? { p, dias, last, m } : null;
+  }).filter(Boolean).sort((a, b) => b.dias - a.dias);
+  let tl = "";
+  if (!events.length) tl = `<div class="empty"><div class="empty-art">📅</div><h3>Nenhum registro ainda</h3><p>Quando fizerem ou pedirem um prato, abram o prato e toquem em “Fizemos hoje”.</p></div>`;
+  else {
+    let lastDay = "";
+    events.slice(0, S.histLimit).forEach(ev => {
+      if (ev.d !== lastDay) { tl += `<div class="tl-day">${esc(dayLabel(ev.d))}</div>`; lastDay = ev.d; }
+      const casa = ev.p.origem !== "restaurante";
+      tl += tlRow(ev.p, `${casa ? "Feito em casa" : "Pedido" + (ev.p.restaurante ? " do " + ev.p.restaurante : "")} · registrado por ${memberName(ev.por)}`);
+    });
+    if (events.length > S.histLimit) tl += `<div class="pad" style="padding-top:10px"><button class="btn btn-ghost btn-lg" data-act="hist-more">Mostrar mais</button></div>`;
+  }
+  return topbar("Histórico") + `
+    <h2 class="sec-title">Mais feitos</h2>
+    <div class="seg-pill" role="group" aria-label="Período do ranking"><button data-act="hist-range" data-v="90" aria-pressed="${S.histRange === "90"}">Últimos 90 dias</button><button data-act="hist-range" data-v="all" aria-pressed="${S.histRange === "all"}">Desde sempre</button></div>
+    ${counts.length ? counts.map((x, i) => tlRow(x.p, lastTxt(x.p), `<span class="rk-n">${x.n}×</span>`, `<span class="rk-pos">${i + 1}</span>`)).join("") : `<p class="pad muted" style="padding-top:6px;padding-bottom:6px">${S.histRange === "90" ? "Nenhum registro nos últimos 90 dias." : "Ainda não há registros."}</p>`}
+    <h2 class="sec-title">Faz tempo que não fazemos</h2>
+    <p class="sec-sub">Pratos com 4 estrelas ou mais e sem registro há mais de 30 dias.</p>
+    ${saudade.length ? saudade.map(x => tlRow(x.p, x.last ? `última vez há ${x.dias} dias` : `sem registro desde o cadastro, há ${x.dias} dias`, `<span class="cover-rate">${ic("star", 14)} ${fmt1(x.m)}</span>`)).join("") : `<p class="pad muted" style="padding-top:6px">Nenhum por enquanto. Os favoritos estão em dia!</p>`}
+    <h2 class="sec-title">Linha do tempo</h2>
+    ${tl}`;
+}
+
+/* ---------- Configurações ---------- */
+function viewConfig() {
+  const c = S.card;
+  if (!c) return topbar("Configurações") + `<div class="center-screen"><div class="loader"></div></div>`;
+  const pap = myPapel();
+  const dono = isDono();
+  const pend = pendentes(c);
+  const ord = { dono: 0, editor: 1, pendente: 2, leitor: 3 };
+  const membros = Object.entries(c.membros || {}).map(([id, m]) => Object.assign({ id }, m))
+    .sort((a, b) => ((ord[a.papel] ?? 4) - (ord[b.papel] ?? 4)) || (a.nome || "").localeCompare(b.nome || "", "pt-BR"));
+  const ps = pratosArr();
+  const cats = catsSorted();
+  const countCat = id => ps.filter(p => (p.categorias || []).includes(id)).length;
+  const comTudo = ps.filter(p => ATTRS.every(a => p.quiz && p.quiz[a.key])).length;
+  const memberBtns = m => {
+    if (!dono || m.id === S.uid) return "";
+    if (m.papel === "editor") return `<div class="cfg-btns"><button class="btn btn-ghost btn-sm" data-act="make-owner" data-mid="${esc(m.id)}">${ic("crown", 16)} Tornar dono</button><button class="btn btn-ghost btn-sm" data-act="rm-editor" data-mid="${esc(m.id)}">Tirar edição</button></div>`;
+    if (m.papel === "leitor") return `<div class="cfg-btns"><button class="btn btn-ghost btn-sm" data-act="rm-member" data-mid="${esc(m.id)}">Remover</button></div>`;
+    return "";
+  };
+  return topbar("Configurações") + `
+  <section class="cfg-sec"><h2>Este cardápio</h2>
+    <div class="cfg-row"><div class="grow"><small>Nome</small><b>${esc(c.nome)}</b></div>${dono ? `<button class="btn btn-ghost btn-sm" data-act="rename-card">Renomear</button>` : ""}</div>
+    <div class="cfg-row"><div class="grow"><small>Código para entrar</small><b class="mono">${esc(S.cur)}</b></div><div class="cfg-btns"><button class="btn btn-ghost btn-sm" data-act="copy-code">${ic("copy", 16)} Copiar</button><button class="btn btn-red btn-sm" data-act="share-code">${ic("share", 16)} Compartilhar</button></div></div>
+    <div class="cfg-row"><a class="wa-link" href="${esc(waHref(S.cur))}" target="_blank" rel="noopener">Enviar o código pelo WhatsApp</a></div>
+  </section>
+  ${dono && pend.length ? `<section class="cfg-sec"><h2>Pedidos para editar (${pend.length})</h2>
+    ${pend.map(m => `<div class="cfg-row"><div class="grow"><b>${esc(m.nome || "Alguém")}</b><small>quer cadastrar e avaliar pratos</small></div><div class="cfg-btns"><button class="btn btn-ghost btn-sm" data-act="refuse" data-mid="${esc(m.id)}">Recusar</button><button class="btn btn-red btn-sm" data-act="approve" data-mid="${esc(m.id)}">Aprovar</button></div></div>`).join("")}
+  </section>` : ""}
+  <section class="cfg-sec"><h2>Pessoas</h2>
+    ${membros.map(m => `<div class="cfg-row"><div class="grow"><b>${esc(m.nome || "Alguém")}${m.id === S.uid ? " (você)" : ""}</b></div><span class="role role-${esc(m.papel)}">${esc(ROLE_LABEL[m.papel] || "Leitor")}</span>${memberBtns(m)}</div>`).join("")}
+    ${pap === "leitor" || pap === "visitante" ? `<div class="cfg-row"><div class="grow"><small>Você só pode ver este cardápio.</small></div><button class="btn btn-red btn-sm" data-act="request-edit">Pedir para editar</button></div>` : ""}
+    ${pap === "pendente" ? `<div class="cfg-row"><div class="grow"><small>Seu pedido para editar está aguardando o dono.</small></div></div>` : ""}
+    ${dono ? `<p class="hint" style="padding-bottom:6px">Dica: torne seu par dono também. Se um de vocês trocar de celular, o outro continua podendo aprovar pessoas.</p>` : ""}
+  </section>
+  ${canEdit() ? `<section class="cfg-sec"><h2>Quiz</h2>
+    <div class="cfg-row"><div class="grow"><b>Classificar pratos para o quiz</b><small>${comTudo} de ${ps.length} pratos com as 4 respostas</small></div><button class="btn btn-red btn-sm" data-act="classify">Começar</button></div>
+  </section>
+  <section class="cfg-sec"><h2>Categorias</h2>
+    ${cats.map(ct => { const n = countCat(ct.id); return `<div class="cfg-row"><span class="cat-ic">${esc(ct.icone)}</span><div class="grow"><b>${esc(ct.nome)}</b><small>${n ? `${n} ${n === 1 ? "prato" : "pratos"}` : "sem pratos"}</small></div><div class="cfg-btns"><button class="btn btn-ghost btn-sm" data-act="cat-edit" data-cid="${esc(ct.id)}">Renomear</button>${n ? "" : `<button class="btn btn-danger btn-sm" data-act="cat-del" data-cid="${esc(ct.id)}" aria-label="Excluir ${esc(ct.nome)}">${ic("trash", 16)}</button>`}</div></div>`; }).join("")}
+    <div class="cfg-row"><button class="btn btn-soft" data-act="newcat">${ic("plus", 18)} Nova categoria</button></div>
+    <p class="hint" style="padding-bottom:6px">Só dá para excluir categorias sem pratos.</p>
+  </section>` : ""}
+  <section class="cfg-sec"><h2>Você</h2>
+    <div class="cfg-row"><div class="grow"><small>Seu nome</small><b>${esc(S.nome)}</b></div><button class="btn btn-ghost btn-sm" data-act="rename-me">Alterar</button></div>
+    <button class="cfg-link" data-act="tutorial">${ic("phone", 22)}<span><b>Como instalar no celular</b><small>${isStandalone() ? "Você já está usando o app instalado" : "Passo a passo para colocar na tela de início"}</small></span>${ic("chevR", 18)}</button>
+    <button class="cfg-link" data-act="home">${ic("chevL", 22)}<span><b>Trocar de cardápio</b><small>Voltar para Meus cardápios</small></span></button>
+  </section>
+  <p class="foot-note">${APP_NAME} · os pratos ficam salvos na nuvem para todos que entram com o código.</p>`;
+}
+
+/* ============================== Ações globais ============================== */
+document.addEventListener("submit", e => {
+  if (e.target && e.target.id === "onbForm") {
+    e.preventDefault();
+    const v = $("#onbName").value.trim().replace(/\s+/g, " ");
+    if (!v) { $("#onbErr").textContent = "Digite seu nome para continuar."; return; }
+    S.nome = v.slice(0, 30);
+    LS.set("pd:nome", S.nome);
+    goHome();
+  }
+});
+document.addEventListener("click", e => {
+  const el = e.target.closest("[data-act]");
+  if (!el || el.disabled) return;
+  const d = el.dataset;
+  switch (d.act) {
+    case "reload": location.reload(); break;
+    case "home": closeAllSheets(); goHome(); break;
+    case "refresh": refreshNow(true); break;
+    case "retry": S.slow = false; refreshNow(true); scheduleRender(); break;
+    case "tab": {
+      if (S.tab === "cardapio") S.cardScroll = window.scrollY;
+      const changedTab = S.tab !== d.tab;
+      S.tab = d.tab;
+      renderCardScreen(true);
+      window.scrollTo(0, S.tab === "cardapio" && changedTab ? S.cardScroll : 0);
+      if (changedTab) refreshNow(false);
+      break;
+    }
+    case "tabcat": scrollToCat(d.cat); break;
+    case "add": openForm(null); break;
+    case "quiz": openQuiz(); break;
+    case "open": openCardapio(d.code); break;
+    case "create": openCreate(); break;
+    case "join": openJoin(); break;
+    case "rename-me": renameMe(); break;
+    case "tutorial": openTutorial(); break;
+    case "dish": openDetail(d.id); break;
+    case "newcat": newCategoryFlow(); break;
+    case "goto-config": S.tab = "config"; renderCardScreen(true); window.scrollTo(0, 0); break;
+    case "request-edit": requestEdit(); break;
+    case "approve": setRole(d.mid, "editor", "Aprovado! Agora essa pessoa pode cadastrar e avaliar."); break;
+    case "refuse": setRole(d.mid, "leitor", "Pedido recusado."); break;
+    case "rm-editor": removeEditor(d.mid); break;
+    case "rm-member": removeMember(d.mid); break;
+    case "make-owner": makeOwner(d.mid); break;
+    case "rename-card": renameCard(); break;
+    case "copy-code": copyText(S.cur, `Código ${S.cur} copiado`); break;
+    case "share-code": shareCode(S.cur); break;
+    case "cat-edit": editCategory(d.cid); break;
+    case "cat-del": deleteCategory(d.cid); break;
+    case "classify": openClassify(); break;
+    case "hist-range": S.histRange = d.v; renderCardScreen(false); break;
+    case "hist-more": S.histLimit += 30; renderCardScreen(false); break;
+    case "rate": ratePrato(d.id, Number(d.n)); break;
+    case "done": markDone(d.id, el); break;
+    case "edit": openForm(d.id); break;
+    case "del": deletePrato(d.id); break;
+    case "import": openImport(d.id); break;
+    case "close-sheet": closeSheet(); break;
+  }
+});
+
+/* ---------- Entrar / criar ---------- */
+function codeBoxes(code) { return `<div class="code-big" aria-label="Código ${esc(code)}">${code.split("").map(ch => `<span>${esc(ch)}</span>`).join("")}</div>`; }
+function openJoin() {
+  const s = openSheet({ html: `
+    <div class="sheet-head"><h3>Entrar com código</h3><button class="icon-btn" data-x="close" aria-label="Fechar">${ic("close")}</button></div>
+    <form class="sheet-body" id="joinForm" style="display:flex;flex-direction:column;gap:12px">
+      <p class="muted">Digite o código de 5 caracteres que te mandaram.</p>
+      <label class="vh" for="joinCode">Código do cardápio</label>
+      <input id="joinCode" class="inp inp-code" maxlength="8" autocomplete="off" autocapitalize="characters" autocorrect="off" spellcheck="false" placeholder="•••••">
+      <p class="hint" id="joinHint">Letras e números, sem 0, O, 1, I e L.</p>
+      <button class="btn btn-red btn-lg" id="joinBtn" type="submit" disabled>Entrar</button>
+    </form>` });
+  const inp = $("#joinCode", s.el), btn = $("#joinBtn", s.el), hint = $("#joinHint", s.el);
+  setTimeout(() => inp.focus(), 280);
+  s.el.querySelector('[data-x="close"]').onclick = () => closeSheet(s);
+  inp.addEventListener("input", () => {
+    const raw = inp.value.toUpperCase().replace(/[^A-Z0-9]/g, "");
+    const ok = raw.split("").filter(ch => CODE_CHARS.includes(ch));
+    if (ok.length !== raw.length) { hint.textContent = "Os códigos não usam 0, O, 1, I nem L. Confira o código."; hint.style.color = "var(--red)"; }
+    else { hint.textContent = "Letras e números, sem 0, O, 1, I e L."; hint.style.color = ""; }
+    inp.value = ok.join("").slice(0, 5);
+    btn.disabled = inp.value.length !== 5;
+  });
+  $("#joinForm", s.el).addEventListener("submit", async e => {
+    e.preventDefault();
+    const code = inp.value;
+    if (!/^[A-Z0-9]{5}$/.test(code)) return;
+    btn.disabled = true; btn.textContent = "Procurando…";
+    let r;
+    try { r = await q2(() => sb.rpc("entrar_cardapio", { p_codigo: code, p_meu_nome: S.nome })); }
+    catch (err) { hint.textContent = errMsg(err); hint.style.color = "var(--red)"; btn.disabled = false; btn.textContent = "Entrar"; return; }
+    if (!r) { hint.textContent = `Não achei nenhum cardápio com o código ${code}. Confere com quem te mandou?`; hint.style.color = "var(--red)"; btn.disabled = false; btn.textContent = "Entrar"; return; }
+    setMeu(code, { nome: r.nome, papel: r.papel }, true);
+    s.onClose = null; closeSheet(s); openCardapio(code);
+  });
+}
+function openCreate() {
+  const s = openSheet({ html: `
+    <div class="sheet-head"><h3>Criar cardápio novo</h3><button class="icon-btn" data-x="close" aria-label="Fechar">${ic("close")}</button></div>
+    <div class="sheet-body" id="crBody">
+      <form id="crForm" style="display:flex;flex-direction:column;gap:12px">
+        <label class="lbl" for="crName">Nome do cardápio</label>
+        <input id="crName" class="inp" maxlength="40" placeholder="Ex.: Nosso cantinho" autocomplete="off">
+        <p class="hint">Se deixar em branco, fica “Cardápio de ${esc(S.nome)}”.</p>
+        <p class="err" id="crErr"></p>
+        <button class="btn btn-red btn-lg" type="submit" id="crBtn">Criar cardápio</button>
+      </form>
+    </div>` });
+  s.el.addEventListener("click", e => { if (e.target.closest('[data-x="close"]')) closeSheet(s); });
+  setTimeout(() => { const i = $("#crName", s.el); if (i) i.focus(); }, 280);
+  $("#crForm", s.el).addEventListener("submit", async e => {
+    e.preventDefault();
+    const btn = $("#crBtn", s.el);
+    const nome = ($("#crName", s.el).value.trim() || `Cardápio de ${S.nome}`).slice(0, 40);
+    btn.disabled = true; btn.textContent = "Criando…";
+    try {
+      const code = await q(sb.rpc("criar_cardapio", { p_nome: nome, p_meu_nome: S.nome }));
+      setMeu(code, { nome, papel: "dono", pend: 0 }, true);
+      $("#crBody", s.el).innerHTML = `<div class="created">
+        <div class="ok-ic">${ic("check", 30)}</div>
+        <h3>Cardápio criado!</h3>
+        <p class="muted">Mande este código para seu par entrar:</p>
+        ${codeBoxes(code)}
+        <div class="row2"><button class="btn btn-ghost" data-x="copy">${ic("copy", 18)} Copiar</button><button class="btn btn-red" data-x="share">${ic("share", 18)} Compartilhar</button></div>
+        <a class="wa-link" href="${esc(waHref(code))}" target="_blank" rel="noopener">Enviar pelo WhatsApp</a>
+        <button class="btn btn-soft btn-lg" data-x="open">Abrir cardápio</button>
+      </div>`;
+      s.onClose = () => openCardapio(code);
+      $("#crBody", s.el).addEventListener("click", ev => {
+        const b = ev.target.closest("[data-x]"); if (!b) return;
+        if (b.dataset.x === "copy") copyText(code, `Código ${code} copiado`);
+        if (b.dataset.x === "share") shareCode(code);
+        if (b.dataset.x === "open") closeSheet(s);
+      });
+    } catch (err) {
+      console.warn(err);
+      $("#crErr", s.el).textContent = errMsg(err);
+      btn.disabled = false; btn.textContent = "Criar cardápio";
+    }
+  });
+}
+async function renameMe() {
+  const r = await textSheet({ title: "Seu nome", label: "Como você quer aparecer para o seu par?", value: S.nome, max: 30 });
+  if (!r || !r.value) return;
+  S.nome = r.value.replace(/\s+/g, " ").slice(0, 30);
+  LS.set("pd:nome", S.nome);
+  await act(() => q(sb.rpc("renomear_me", { p_nome: S.nome })));
+  for (const [k, m] of T.membros) if (m.user_id === S.uid) T.membros.set(k, Object.assign({}, m, { nome: S.nome }));
+  toast("Nome atualizado");
+  if (S.screen === "home") render(); else changed();
+}
+
+/* ---------- Papéis ---------- */
+async function requestEdit() {
+  if (!S.cur) return;
+  const ok = await act(() => q(sb.rpc("pedir_edicao", { p_codigo: S.cur })));
+  if (ok) {
+    const k = S.cur + "|" + S.uid, m = T.membros.get(k);
+    if (m) T.membros.set(k, Object.assign({}, m, { papel: "pendente" }));
+    changed();
+    toast("Pedido enviado! Agora é só o dono aprovar.");
+  }
+}
+async function setRole(mid, papel, msg) {
+  if (!isDono()) return;
+  const ok = await act(() => q(sb.rpc("definir_papel", { p_codigo: S.cur, p_user: mid, p_papel: papel })));
+  if (!ok) return;
+  const k = S.cur + "|" + mid;
+  if (papel === "remover") T.membros.delete(k);
+  else { const m = T.membros.get(k); if (m) T.membros.set(k, Object.assign({}, m, { papel })); }
+  changed();
+  toast(msg);
+}
+async function removeEditor(mid) {
+  const ok = await confirmDlg({ title: `Tirar a edição de ${memberName(mid)}?`, text: "A pessoa continua vendo o cardápio, mas não cadastra, não edita e não avalia mais.", ok: "Tirar edição", danger: true });
+  if (ok) setRole(mid, "leitor", "Edição removida.");
+}
+async function removeMember(mid) {
+  const ok = await confirmDlg({ title: `Remover ${memberName(mid)} do cardápio?`, text: "Para voltar, a pessoa vai precisar entrar de novo com o código.", ok: "Remover", danger: true });
+  if (ok) setRole(mid, "remover", "Pessoa removida.");
+}
+async function makeOwner(mid) {
+  const ok = await confirmDlg({ title: `Tornar ${memberName(mid)} dono também?`, text: "A pessoa poderá aprovar pedidos, renomear o cardápio e remover pessoas, como você.", ok: "Tornar dono" });
+  if (ok) setRole(mid, "dono", `${memberName(mid)} agora também é dono.`);
+}
+async function renameCard() {
+  const r = await textSheet({ title: "Renomear cardápio", label: "Nome do cardápio", value: S.card.nome, max: 40 });
+  if (!r || !r.value) return;
+  const ok = await act(async () => {
+    const rows = await q(sb.from("cardapios").update({ nome: r.value.slice(0, 40) }).eq("codigo", S.cur).select());
+    if (!rows.length) throw { code: "42501", message: "permission denied" };
+    put("cardapios", rows[0]);
+  });
+  if (ok) { changed(); toast("Cardápio renomeado"); }
+}
+
+/* ---------- Categorias ---------- */
+async function createCategory(nome, icone) {
+  nome = (nome || "").trim().replace(/\s+/g, " ").slice(0, 24);
+  if (!nome) return null;
+  const code = S.cur;
+  try {
+    const rows = await q2(() => sb.from("categorias").select("*").eq("cardapio", code));
+    rows.forEach(r => put("categorias", r));
+    const found = rows.find(r => norm(r.nome) === norm(nome));
+    if (found) { changed(); return found.id; }
+    const ordem = Math.max(0, ...rows.map(r => r.ordem || 0)) + 1;
+    try {
+      const r = await q(sb.from("categorias").insert({ cardapio: code, nome, icone: icone || "🍴", ordem }).select().single());
+      put("categorias", r); changed(); return r.id;
+    } catch (e) {
+      if (e && e.code === "23505") {
+        const again = await q2(() => sb.from("categorias").select("*").eq("cardapio", code));
+        again.forEach(r => put("categorias", r)); changed();
+        const f = again.find(r => norm(r.nome) === norm(nome));
+        return f ? f.id : null;
+      }
+      throw e;
+    }
+  } catch (e) { console.warn(e); toast(errMsg(e)); return null; }
+}
+async function newCategoryFlow() {
+  if (!canEdit()) return;
+  const r = await textSheet({ title: "Nova categoria", label: "Nome da categoria", placeholder: "Ex.: Mexicana", ok: "Criar categoria", max: 24, emoji: "🍴" });
+  if (!r || !r.value) return;
+  const id = await createCategory(r.value, r.emoji);
+  if (id) toast(`Categoria ${r.value} pronta. Ela aparece nas abas quando tiver pratos.`, { action: "Cadastrar prato", onAction: () => openForm(null, id) });
+}
+async function editCategory(cid) {
+  const c = S.card.categorias && S.card.categorias[cid]; if (!c) return;
+  const r = await textSheet({ title: "Editar categoria", label: "Nome da categoria", value: c.nome, max: 24, emoji: c.icone || "🍴" });
+  if (!r || !r.value) return;
+  const ok = await act(async () => {
+    const row = await q(sb.from("categorias").update({ nome: r.value.slice(0, 24), icone: r.emoji || c.icone }).eq("id", cid).select().single());
+    put("categorias", row);
+  });
+  if (ok) { changed(); toast("Categoria atualizada"); }
+}
+async function deleteCategory(cid) {
+  const c = S.card.categorias && S.card.categorias[cid]; if (!c) return;
+  if (pratosArr().some(p => (p.categorias || []).includes(cid))) { toast("Essa categoria tem pratos. Tire os pratos dela antes."); return; }
+  const ok = await confirmDlg({ title: `Excluir a categoria ${c.nome}?`, ok: "Excluir", danger: true });
+  if (!ok) return;
+  if (await act(() => q(sb.from("categorias").delete().eq("id", cid)))) { T.categorias.delete(cid); changed(); toast("Categoria excluída"); }
+}
+
+/* ---------- Detalhe do prato ---------- */
+function openDetail(id) {
+  if (!S.pratos[id]) return;
+  const s = openSheet({ cls: "full", html: `<div class="det" id="det"></div>`, onClose: () => { if (S.detail && S.detail.s === s) S.detail = null; } });
+  S.detail = { id, s };
+  renderDetail();
+}
+function renderDetail() {
+  const D = S.detail; if (!D) return;
+  const p0 = S.pratos[D.id];
+  if (!p0) { const s = D.s; S.detail = null; closeSheet(s); toast("Esse prato foi excluído."); return; }
+  const p = Object.assign({ id: D.id }, p0);
+  const box = $(".det", D.s.el);
+  const sc = $(".det-scroll", D.s.el);
+  const top = sc ? sc.scrollTop : 0;
+  const cats = S.card ? S.card.categorias || {} : {};
+  const catChips = (p.categorias || []).filter(c => cats[c]).map(c => `<span class="chip chip-static">${esc(cats[c].icone || "")} ${esc(cats[c].nome)}</span>`).join("");
+  const quizChips = ATTRS.filter(a => p.quiz && p.quiz[a.key] && ATTR_LABEL[a.key + ":" + p.quiz[a.key]]).map(a => `<span class="chip chip-quiz">${esc(ATTR_LABEL[a.key + ":" + p.quiz[a.key]])}</span>`).join("");
+  const notas = notasList(p);
+  const avg = media(p);
+  const my = p.notas && typeof p.notas[S.uid] === "number" ? p.notas[S.uid] : 0;
+  const ed = canEdit();
+  const casa = p.origem !== "restaurante";
+  const fs = feitosList(p);
+  const sumNotas = notas.length
+    ? notas.sort((a, b) => (a[0] === S.uid ? -1 : b[0] === S.uid ? 1 : 0)).map(([u, v]) => `${esc(memberName(u))} ${v} ★`).join(" · ") + ` → <b>média ${fmt1(avg)}</b>`
+    : "Sem avaliação";
+  const doneSum = fs.length ? `${casa ? "Feito" : "Pedido"} ${fs.length} ${fs.length === 1 ? "vez" : "vezes"} · última vez em ${fmtDate(fs[0].d)}` : (casa ? "Ainda não registrado como feito." : "Ainda não registrado como pedido.");
+  box.innerHTML = `<div class="det-scroll">
+    <div class="det-photo">${validFoto(p.foto) ? `<img src="${p.foto}" alt="Foto de ${esc(p.nome)}">` : `<span class="ph" aria-hidden="true">${esc(catIcon(p))}</span>`}
+      <button class="det-close" data-act="close-sheet" aria-label="Fechar">${ic("chevD", 22)}</button></div>
+    <div class="det-body">
+      <h2 class="det-name">${esc(p.nome)}</h2>
+      <div>${casa ? `<span class="orig-home">Feito em casa</span>` : `<span class="orig-rest" style="font-size:15px">${ic("store", 16)} Pedido ${p.restaurante ? "do " + esc(p.restaurante) : "de restaurante"}</span>`}</div>
+      ${catChips ? `<div class="chips">${catChips}</div>` : ""}
+      ${quizChips ? `<div class="chips">${quizChips}</div>` : (ed ? `<p class="hint">Sem respostas do quiz ainda. Edite o prato para ajudar nas sugestões.</p>` : "")}
+      <div class="det-block">
+        <h3>Avaliação</h3>
+        ${ed ? `<div class="rate-row"><span>Sua nota</span><div class="rate" role="group" aria-label="Sua nota">${[1, 2, 3, 4, 5].map(n => `<button class="rstar ${n <= my ? "on" : ""}" data-act="rate" data-id="${esc(p.id)}" data-n="${n}" aria-label="${n} ${n === 1 ? "estrela" : "estrelas"}" aria-pressed="${n === my}">${ic("star", 30)}</button>`).join("")}</div></div>`
+        : (avg != null ? `<div>${starsHTML(avg, 22)}</div>` : "")}
+        <p class="rate-sum">${sumNotas}</p>
+      </div>
+      <div class="det-block">
+        ${ed ? `<button class="btn btn-red btn-lg" data-act="done" data-id="${esc(p.id)}">${ic("check", 20)} ${casa ? "Fizemos hoje" : "Pedimos hoje"}</button>` : ""}
+        <p class="done-sum">${esc(doneSum)}</p>
+        ${fs.length > 1 ? `<div class="dates">${fs.slice(0, 6).map(f => `<span class="chip chip-static">${esc(fmtDate(f.d))}</span>`).join("")}</div>` : ""}
+      </div>
+      <div class="det-actions">
+        ${ed ? `<button class="btn btn-ghost" data-act="edit" data-id="${esc(p.id)}">${ic("edit", 18)} Editar</button><button class="btn btn-danger" data-act="del" data-id="${esc(p.id)}">${ic("trash", 18)} Excluir</button>` : ""}
+        <button class="btn btn-ghost wide" data-act="import" data-id="${esc(p.id)}">${ic("download", 18)} Importar para meu cardápio</button>
+      </div>
+    </div></div>`;
+  const sc2 = $(".det-scroll", D.s.el);
+  if (sc2) sc2.scrollTop = top;
+}
+async function ratePrato(id, n) {
+  if (!canEdit() || !S.pratos[id]) return;
+  const cur = S.pratos[id].notas[S.uid];
+  const code = S.cur;
+  if (cur === n) {
+    if (await act(() => q(sb.from("notas").delete().eq("prato_id", id).eq("user_id", S.uid)))) { T.notas.delete(id + "|" + S.uid); changed(); toast("Sua nota foi removida"); }
+    return;
+  }
+  await act(async () => {
+    const row = await q(sb.from("notas").upsert({ prato_id: id, cardapio: code, user_id: S.uid, nota: n, atualizado_em: nowISO() }).select().single());
+    put("notas", row); changed();
+  });
+}
+async function markDone(id, btn) {
+  if (!canEdit()) return;
+  const p = S.pratos[id]; if (!p) return;
+  if (btn) { btn.disabled = true; setTimeout(() => { btn.disabled = false; }, 1500); }
+  const ev = uuid();
+  const casa = p.origem !== "restaurante";
+  const ok = await act(async () => {
+    const row = await q(sb.from("feitos").insert({ id: ev, prato_id: id, cardapio: S.cur, data: todayStr(), por: S.uid }).select().single());
+    put("feitos", row); changed();
+  });
+  if (ok) toast(`${casa ? "Feito hoje" : "Pedido hoje"}: ${p.nome}`, { action: "Desfazer", onAction: async () => {
+    if (await act(() => q(sb.from("feitos").delete().eq("id", ev)))) { T.feitos.delete(ev); changed(); toast("Registro desfeito"); }
+  } });
+}
+async function deletePrato(id) {
+  const p = S.pratos[id]; if (!p || !canEdit()) return;
+  const ok = await confirmDlg({ title: `Excluir ${p.nome}?`, text: "As notas e o histórico desse prato também somem.", ok: "Excluir", danger: true });
+  if (!ok) return;
+  if (await act(() => q(sb.from("pratos").delete().eq("id", id)))) {
+    if (S.detail && S.detail.id === id) { const s = S.detail.s; S.detail = null; closeSheet(s); }
+    dropPrato(id); changed();
+    toast("Prato excluído");
+  }
+}
+
+/* ---------- Gravação de prato (usada no cadastro, na edição e na importação) ---------- */
+async function salvarFoto(pid, code, foto) {
+  const row = await q(sb.from("fotos").upsert({ prato_id: pid, cardapio: code, data: foto, atualizado_em: nowISO() }).select("prato_id,cardapio,atualizado_em").single());
+  if (code === S.cur) put("fotos", Object.assign({}, row, { data: foto }));
+}
+async function salvarNota(pid, code, nota) {
+  if (nota) { const row = await q(sb.from("notas").upsert({ prato_id: pid, cardapio: code, user_id: S.uid, nota, atualizado_em: nowISO() }).select().single()); if (code === S.cur) put("notas", row); }
+  else { await q(sb.from("notas").delete().eq("prato_id", pid).eq("user_id", S.uid)); if (code === S.cur) T.notas.delete(pid + "|" + S.uid); }
+}
+async function setQuizAttr(id, attr, val) {
+  const rows = await q(sb.from("pratos").update({ [attr]: val, atualizado_em: nowISO() }).eq("id", id).select());
+  if (rows.length) { put("pratos", rows[0]); changed(); return true; }
+  return false;
+}
+
+/* ---------- Cadastro / edição ---------- */
+function resizeImage(file) {
+  return new Promise((res, rej) => {
+    const url = URL.createObjectURL(file);
+    const img = new Image();
+    img.onload = () => {
+      try {
+        const max = 400, w = img.naturalWidth, h = img.naturalHeight;
+        const k = Math.min(1, max / Math.max(w, h));
+        const cw = Math.max(1, Math.round(w * k)), ch = Math.max(1, Math.round(h * k));
+        const cv = document.createElement("canvas"); cv.width = cw; cv.height = ch;
+        const cx = cv.getContext("2d"); cx.fillStyle = "#fff"; cx.fillRect(0, 0, cw, ch); cx.drawImage(img, 0, 0, cw, ch);
+        res(cv.toDataURL("image/jpeg", 0.6));
+      } catch (e) { rej(e); } finally { URL.revokeObjectURL(url); }
+    };
+    img.onerror = () => { URL.revokeObjectURL(url); rej(new Error("img")); };
+    img.src = url;
+  });
+}
+function openForm(id, preCat) {
+  if (!canEdit()) return;
+  const p = id ? S.pratos[id] : null;
+  if (id && !p) return;
+  const myN = p && typeof p.notas[S.uid] === "number" ? p.notas[S.uid] : null;
+  const foto0 = p && validFoto(p.foto) ? p.foto : null;
+  const F = { id, origem: p ? p.origem : null, cats: new Set(p ? (p.categorias || []) : (preCat ? [preCat] : [])), foto: foto0, nota: myN, quiz: Object.assign({}, (p && p.quiz) || {}), newCat: false, saving: false };
+  const quizOpen = ATTRS.some(a => F.quiz[a.key]);
+  const s = openSheet({ cls: "tall", html: `
+    <div class="sheet-head"><h3>${id ? "Editar prato" : "Novo prato"}</h3><button class="icon-btn" data-x="close" aria-label="Fechar">${ic("close")}</button></div>
+    <div class="sheet-body">
+      <div class="fld"><label class="lbl" for="fNome">Nome do prato</label><input id="fNome" class="inp" maxlength="60" placeholder="Ex.: Lamen de porco" value="${esc(p ? p.nome : "")}" autocomplete="off"><p class="err" id="eNome"></p></div>
+      <div class="fld"><span class="lbl" id="lOrig">De onde vem?</span>
+        <div class="seg" role="group" aria-labelledby="lOrig"><button type="button" class="seg-b" data-x="orig" data-v="casa">${ic("home", 18)} Feito em casa</button><button type="button" class="seg-b" data-x="orig" data-v="restaurante">${ic("store", 18)} De restaurante</button></div>
+        <p class="err" id="eOrig"></p>
+        <div id="fRestWrap" class="rest-wrap" hidden><label class="lbl lbl-sm" for="fRest">Nome do lugar</label><input id="fRest" class="inp" maxlength="50" placeholder="Ex.: Bela Macerati" value="${esc(p ? p.restaurante || "" : "")}" autocomplete="off"><div class="sugs" id="fSugs"></div></div>
+      </div>
+      <div class="fld"><span class="lbl">Categorias <small>uma ou mais</small></span><div class="chips" id="fCats"></div><p class="err" id="eCats"></p></div>
+      <div class="fld"><span class="lbl">Foto <small>opcional</small></span><div id="fFoto"></div></div>
+      <div class="fld"><span class="lbl">Sua nota <small>opcional</small></span><div class="rate rate-lg" id="fNota" role="group" aria-label="Sua nota"></div></div>
+      <div class="fld"><button type="button" class="collapse" data-x="quizToggle" aria-expanded="${quizOpen}" aria-controls="fQuiz">${ic("sparkle", 18)}<span>Ajudar o quiz<small>opcional</small></span>${ic("chevD", 18)}</button>
+        <div id="fQuiz" class="quiz-attrs" ${quizOpen ? "" : "hidden"}>${ATTRS.map(a => `<div><span class="qa-q">${esc(a.q)}</span><div class="seg seg-sm">${[a.a, a.b].map(o => `<button type="button" class="seg-b" data-x="qa" data-attr="${a.key}" data-v="${o[0]}">${esc(o[1])}</button>`).join("")}</div></div>`).join("")}<p class="hint">Toque de novo para desmarcar. Tudo aqui é opcional.</p></div>
+      </div>
+    </div>
+    <div class="sheet-foot"><button class="btn btn-red btn-lg" data-x="save">${id ? "Salvar alterações" : "Salvar prato"}</button></div>` });
+  const el = s.el;
+  const paintOrig = () => {
+    $$('[data-x="orig"]', el).forEach(b => b.setAttribute("aria-pressed", String(b.dataset.v === F.origem)));
+    $("#fRestWrap", el).hidden = F.origem !== "restaurante";
+  };
+  const paintSugs = () => {
+    const v = norm($("#fRest", el).value);
+    const list = restaurantes().filter(r => norm(r) !== v && (!v || norm(r).includes(v))).slice(0, 6);
+    $("#fSugs", el).innerHTML = list.map(r => `<button type="button" class="chip chip-sug" data-x="sug" data-v="${esc(r)}">${ic("store", 13)} ${esc(r)}</button>`).join("");
+  };
+  const paintCats = () => {
+    const cats = catsSorted();
+    $("#fCats", el).innerHTML = cats.map(c => `<button type="button" class="chip chip-sel" data-x="cat" data-id="${esc(c.id)}" aria-pressed="${F.cats.has(c.id)}">${esc(c.icone)} ${esc(c.nome)}</button>`).join("")
+      + (F.newCat ? `<span class="newcat"><input id="fNewCat" class="inp inp-sm" maxlength="24" placeholder="Nome da categoria" aria-label="Nome da nova categoria"><button type="button" class="btn btn-red btn-sm" data-x="newCatOk">Criar</button></span>`
+        : `<button type="button" class="chip chip-add" data-x="newCat">${ic("plus", 14)} nova categoria</button>`);
+    if (F.newCat) {
+      const ni = $("#fNewCat", el);
+      setTimeout(() => ni && ni.focus(), 30);
+      ni.addEventListener("keydown", ev => { if (ev.key === "Enter") { ev.preventDefault(); addNewCat(); } });
+    }
+  };
+  const addNewCat = async () => {
+    const ni = $("#fNewCat", el); const v = ni ? ni.value.trim() : "";
+    if (!v) { F.newCat = false; paintCats(); return; }
+    const b = $('[data-x="newCatOk"]', el); if (b) { b.disabled = true; b.textContent = "…"; }
+    const cid = await createCategory(v);
+    F.newCat = false;
+    if (cid) { F.cats.add(cid); $("#eCats", el).textContent = ""; }
+    paintCats();
+  };
+  const paintFoto = busy => {
+    $("#fFoto", el).innerHTML = (busy ? `<p class="hint" style="margin:0 0 10px">Preparando a foto…</p>` : "")
+      + (F.foto ? `<div class="foto-prev"><img src="${F.foto}" alt="Foto do prato"><button type="button" class="btn btn-ghost btn-sm" data-x="rmFoto">${ic("trash", 16)} Remover</button></div>` : "")
+      + `<div class="row2"><label class="btn btn-ghost" for="fCam">${ic("camera", 18)} Câmera</label><label class="btn btn-ghost" for="fGal">${ic("image", 18)} Galeria</label></div>
+         <input class="vh" type="file" accept="image/*" capture="environment" id="fCam"><input class="vh" type="file" accept="image/*" id="fGal">`;
+    ["#fCam", "#fGal"].forEach(sel => $(sel, el).addEventListener("change", async ev => {
+      const f = ev.target.files && ev.target.files[0]; if (!f) return;
+      paintFoto(true);
+      try { F.foto = await resizeImage(f); } catch (e) { toast("Não consegui ler essa foto. Tente outra."); }
+      paintFoto(false);
+    }));
+  };
+  const paintNota = () => { $("#fNota", el).innerHTML = [1, 2, 3, 4, 5].map(n => `<button type="button" class="rstar ${F.nota && n <= F.nota ? "on" : ""}" data-x="nota" data-n="${n}" aria-label="${n} ${n === 1 ? "estrela" : "estrelas"}" aria-pressed="${n === F.nota}">${ic("star", 32)}</button>`).join(""); };
+  const paintQuiz = () => { $$('[data-x="qa"]', el).forEach(b => b.setAttribute("aria-pressed", String(F.quiz[b.dataset.attr] === b.dataset.v))); };
+  paintOrig(); paintCats(); paintFoto(false); paintNota(); paintQuiz();
+  if (F.origem === "restaurante") paintSugs();
+  if (!id) setTimeout(() => { const n = $("#fNome", el); if (n) n.focus(); }, 300);
+  $("#fRest", el).addEventListener("input", paintSugs);
+  $("#fNome", el).addEventListener("input", () => { $("#eNome", el).textContent = ""; });
+
+  const save = async () => {
+    if (F.saving) return;
+    const nome = $("#fNome", el).value.trim().replace(/\s+/g, " ");
+    let bad = null;
+    if (!nome) { $("#eNome", el).textContent = "Dê um nome para o prato."; bad = bad || "#fNome"; }
+    if (!F.origem) { $("#eOrig", el).textContent = "Escolha se é feito em casa ou de restaurante."; bad = bad || "#lOrig"; }
+    const validCats = Array.from(F.cats).filter(c => S.card && S.card.categorias && S.card.categorias[c]);
+    if (!validCats.length) { $("#eCats", el).textContent = "Escolha pelo menos uma categoria."; bad = bad || "#fCats"; }
+    if (bad) { const t = $(bad, el); if (t) t.scrollIntoView({ block: "center", behavior: "smooth" }); return; }
+    const ordered = catsSorted().map(c => c.id).filter(c => validCats.includes(c));
+    const restaurante = F.origem === "restaurante" ? $("#fRest", el).value.trim().replace(/\s+/g, " ").slice(0, 50) : "";
+    const fields = { nome: nome.slice(0, 60), origem: F.origem, restaurante, categorias: ordered };
+    ATTRS.forEach(a => { fields[a.key] = F.quiz[a.key] || null; });
+    const btn = $('[data-x="save"]', el);
+    F.saving = true; btn.disabled = true; btn.textContent = "Salvando…";
+    const code = S.cur;
+    let ok = false, pid = F.id;
+    try {
+      if (!F.id) {
+        pid = uuid();
+        const row = await q(sb.from("pratos").insert(Object.assign({ id: pid, cardapio: code, criado_por: S.uid }, fields)).select().single());
+        put("pratos", row);
+        ok = true;
+        try {
+          if (F.foto) await salvarFoto(pid, code, F.foto);
+          if (F.nota) await salvarNota(pid, code, F.nota);
+        } catch (e2) { console.warn(e2); toast("Prato salvo, mas a foto ou a nota não foram gravadas. Tente editar de novo."); }
+        changed();
+        toast(`${fields.nome} cadastrado!`, { action: "Ver", onAction: () => openDetail(pid) });
+      } else {
+        const rows = await q(sb.from("pratos").update(Object.assign({ atualizado_em: nowISO() }, fields)).eq("id", F.id).select());
+        if (!rows.length) {
+          const ex = await q(sb.from("pratos").select("id").eq("id", F.id));
+          toast(ex.length ? "Você não tem permissão para editar este prato." : "Esse prato foi excluído por outra pessoa enquanto você editava.");
+          if (!ex.length) { s.onClose = null; closeSheet(s); }
+          F.saving = false; btn.disabled = false; btn.textContent = "Salvar alterações";
+          return;
+        }
+        put("pratos", rows[0]);
+        if (F.foto !== foto0) {
+          if (F.foto) await salvarFoto(F.id, code, F.foto);
+          else { await q(sb.from("fotos").delete().eq("prato_id", F.id)); T.fotos.delete(F.id); }
+        }
+        if (F.nota !== myN) await salvarNota(F.id, code, F.nota);
+        ok = true;
+        changed();
+        toast("Alterações salvas");
+      }
+    } catch (e) { console.warn(e); toast(errMsg(e)); }
+    F.saving = false;
+    if (ok) { s.onClose = null; closeSheet(s); }
+    else { btn.disabled = false; btn.textContent = F.id ? "Salvar alterações" : "Salvar prato"; }
+  };
+  el.addEventListener("click", e => {
+    const b = e.target.closest("[data-x]"); if (!b) return;
+    const x = b.dataset.x;
+    if (x === "close") closeSheet(s);
+    else if (x === "orig") { F.origem = b.dataset.v; paintOrig(); $("#eOrig", el).textContent = ""; if (F.origem === "restaurante") { paintSugs(); setTimeout(() => $("#fRest", el).focus(), 50); } }
+    else if (x === "sug") { $("#fRest", el).value = b.dataset.v; paintSugs(); }
+    else if (x === "cat") { const c = b.dataset.id; if (F.cats.has(c)) F.cats.delete(c); else F.cats.add(c); b.setAttribute("aria-pressed", String(F.cats.has(c))); $("#eCats", el).textContent = ""; }
+    else if (x === "newCat") { F.newCat = true; paintCats(); }
+    else if (x === "newCatOk") addNewCat();
+    else if (x === "rmFoto") { F.foto = null; paintFoto(false); }
+    else if (x === "nota") { const n = Number(b.dataset.n); F.nota = F.nota === n ? null : n; paintNota(); }
+    else if (x === "quizToggle") { const qz = $("#fQuiz", el); qz.hidden = !qz.hidden; b.setAttribute("aria-expanded", String(!qz.hidden)); if (!qz.hidden) setTimeout(() => qz.scrollIntoView({ block: "nearest", behavior: "smooth" }), 30); }
+    else if (x === "qa") { const k = b.dataset.attr, v = b.dataset.v; F.quiz[k] = F.quiz[k] === v ? null : v; paintQuiz(); }
+    else if (x === "save") save();
+  });
+}
+
+/* ---------- Importar ---------- */
+async function openImport(id) {
+  const p0 = S.pratos[id]; if (!p0) return;
+  const p = Object.assign({ id }, p0);
+  const srcCats = Object.assign({}, (S.card && S.card.categorias) || {});
+  const srcCode = S.cur;
+  const s = openSheet({ html: `<div class="sheet-head"><h3>Importar ${esc(p.nome)}</h3><button class="icon-btn" data-x="close" aria-label="Fechar">${ic("close")}</button></div><div class="sheet-body" id="impBody"><div class="center-screen" style="min-height:120px"><div class="loader"></div></div></div>` });
+  s.el.addEventListener("click", e => { if (e.target.closest('[data-x="close"]')) closeSheet(s); });
+  const body = $("#impBody", s.el);
+  await refreshMeus();
+  if (!sheetStack.includes(s)) return;
+  const rows = Object.entries(S.meus).filter(([c, m]) => c !== srcCode && (m.papel === "dono" || m.papel === "editor"))
+    .map(([c, m]) => ({ c, nome: m.nome || c, pap: m.papel })).sort((a, b) => a.nome.localeCompare(b.nome, "pt-BR"));
+  if (!rows.length) {
+    body.innerHTML = `<div class="empty" style="padding:16px 8px"><div class="empty-art">📥</div><h3>Nenhum cardápio seu</h3><p>Você ainda não é dono nem editor de outro cardápio. Crie o seu e volte aqui para importar.</p><button class="btn btn-red" data-x="mk">Criar meu cardápio</button></div>`;
+    $('[data-x="mk"]', body).onclick = () => { closeAllSheets(); goHome(); setTimeout(openCreate, 120); };
+    return;
+  }
+  body.innerHTML = `<p class="muted" style="margin-bottom:8px">Vai junto: nome, origem, restaurante, categorias, foto e respostas do quiz. Notas e histórico ficam.</p>` +
+    rows.map(r => `<button class="myitem" data-x="to" data-code="${esc(r.c)}"><span class="my-logo">${esc((r.nome || "?").charAt(0).toUpperCase())}</span><span class="my-info"><b>${esc(r.nome)}</b><small>${esc(r.c)}</small></span><span class="role role-${esc(r.pap)}">${esc(ROLE_LABEL[r.pap])}</span></button>`).join("");
+  body.addEventListener("click", async e => {
+    const b = e.target.closest('[data-x="to"]'); if (!b || b.disabled) return;
+    $$('[data-x="to"]', body).forEach(x => { x.disabled = true; });
+    const dest = b.dataset.code;
+    const ok = await doImport(p, srcCats, dest);
+    if (ok) { s.onClose = null; closeSheet(s); toast(`${p.nome} importado para ${(S.meus[dest] || {}).nome || dest}`); }
+    else $$('[data-x="to"]', body).forEach(x => { x.disabled = false; });
+  });
+}
+async function doImport(p, srcCats, dest) {
+  try {
+    let dcats = await q2(() => sb.from("categorias").select("*").eq("cardapio", dest));
+    const nomes = [];
+    (p.categorias || []).forEach(cid => { const sc = srcCats[cid]; if (sc && sc.nome && !nomes.some(n => norm(n.nome) === norm(sc.nome))) nomes.push(sc); });
+    const faltam = nomes.filter(sc => !dcats.some(d => norm(d.nome) === norm(sc.nome)));
+    if (faltam.length) {
+      let ordem = Math.max(0, ...dcats.map(d => d.ordem || 0)) + 1;
+      try { await q(sb.from("categorias").insert(faltam.map(sc => ({ cardapio: dest, nome: sc.nome, icone: sc.icone || "🍴", ordem: ordem++ })))); }
+      catch (e) { if (!e || e.code !== "23505") throw e; }
+      dcats = await q2(() => sb.from("categorias").select("*").eq("cardapio", dest));
+    }
+    const ids = nomes.map(sc => (dcats.find(d => norm(d.nome) === norm(sc.nome)) || {}).id).filter(Boolean);
+    const pid = uuid();
+    const row = { id: pid, cardapio: dest, nome: p.nome, origem: p.origem === "restaurante" ? "restaurante" : "casa", restaurante: p.restaurante || "", categorias: ids, criado_por: S.uid };
+    ATTRS.forEach(a => { row[a.key] = (p.quiz && p.quiz[a.key]) || null; });
+    await q(sb.from("pratos").insert(row));
+    if (validFoto(p.foto)) await salvarFoto(pid, dest, p.foto);
+    return true;
+  } catch (e) { console.warn(e); toast(errMsg(e)); return false; }
+}
+
+/* ---------- Quiz ---------- */
+function quizRank(ans) {
+  let list = pratosArr();
+  if (ans.origem) list = list.filter(p => (p.origem === "restaurante" ? "restaurante" : "casa") === ans.origem);
+  const out = [];
+  for (const p of list) {
+    let score = 0, elim = false;
+    for (const a of ATTRS) {
+      const want = ans[a.key]; if (!want) continue;
+      const has = p.quiz && p.quiz[a.key];
+      if (!has) { score += 1; continue; }
+      if (has === want) score += 3; else { elim = true; break; }
+    }
+    if (!elim) out.push({ p, score });
+  }
+  const since = p => { const l = ultima(p); return l ? daysAgo(l) : 100000; };
+  out.sort((x, y) => (y.score - x.score) || ((media(y.p) ?? -1) - (media(x.p) ?? -1)) || (since(y.p) - since(x.p)) || byName(x.p, y.p));
+  return out.map(x => x.p);
+}
+function openQuiz() {
+  const Q = { step: 0, ans: {}, res: null, page: 0 };
+  const s = openSheet({ cls: "full", html: `<div class="qz" id="qz"></div>`, onClose: () => { S.quiz = null; } });
+  S.quiz = { Q, s };
+  const el = s.el;
+  const paint = () => {
+    const box = $("#qz", el);
+    if (!Q.res) {
+      const st = QUIZ_STEPS[Q.step];
+      box.innerHTML = `<div class="qz-top"><button class="icon-btn" data-x="back" aria-label="Voltar" ${Q.step === 0 ? "disabled" : ""}>${ic("chevL", 22)}</button><div class="prog" role="progressbar" aria-valuemin="0" aria-valuemax="5" aria-valuenow="${Q.step}"><i style="width:${Q.step / QUIZ_STEPS.length * 100}%"></i></div><button class="icon-btn" data-x="close" aria-label="Fechar">${ic("close", 22)}</button></div>
+        <div class="qz-main"><div><p class="qz-step">Pergunta ${Q.step + 1} de ${QUIZ_STEPS.length}</p><h2 class="qz-q">${esc(st.q)}</h2></div>
+        <div class="qz-opts">
+          <button class="qopt" data-x="ans" data-v="${st.a[0]}"><span class="qe" aria-hidden="true">${st.a[2]}</span>${esc(st.a[1])}</button>
+          <button class="qopt" data-x="ans" data-v="${st.b[0]}"><span class="qe" aria-hidden="true">${st.b[2]}</span>${esc(st.b[1])}</button>
+          <button class="qskip" data-x="ans" data-v="">Tanto faz</button>
+        </div></div>`;
+      return;
+    }
+    const all = pratosArr();
+    const total = all.length;
+    const withAttrs = all.filter(hasQuiz).length;
+    const few = total > 0 && withAttrs < total / 2;
+    const per = 5;
+    const pages = Math.max(1, Math.ceil(Q.res.length / per));
+    const shown = Q.res.slice(Q.page * per, Q.page * per + per);
+    const tip = few ? `<div class="banner banner-info">${ic("sparkle", 18)}<span class="grow">Só ${withAttrs} de ${total} pratos têm respostas do quiz, então as sugestões ainda são aproximadas.</span>${canEdit() ? `<button class="btn btn-sm btn-red" data-x="classify">Classificar</button>` : ""}</div>` : "";
+    let mid;
+    if (!total) mid = `<div class="empty"><div class="empty-art">🍳</div><h3>Ainda não há pratos</h3><p>Cadastrem alguns pratos e o quiz passa a sugerir.</p></div>`;
+    else if (!Q.res.length) mid = `<h2>Nada combina com tudo</h2><p class="muted">Nenhum prato bate com todas as respostas. Tente responder “Tanto faz” em alguma pergunta.</p>${tip}`;
+    else mid = `<h2>Que tal um desses?</h2><p class="muted">${Q.res.length} ${Q.res.length === 1 ? "prato combina" : "pratos combinam"} com o que vocês responderam${pages > 1 ? ` · página ${Q.page + 1} de ${pages}` : ""}.</p>${tip}<div class="sug-list" id="sugList">${shown.map(dishCard).join("")}</div>`;
+    box.innerHTML = `<div class="qz-top"><button class="icon-btn" data-x="redo" aria-label="Refazer">${ic("undo", 21)}</button><div class="prog"><i style="width:100%"></i></div><button class="icon-btn" data-x="close" aria-label="Fechar">${ic("close", 22)}</button></div>
+      <div class="qz-res">${mid}</div>
+      <div class="qz-actions">
+        ${Q.res.length ? `<button class="btn btn-ghost" data-x="more" ${Q.res.length <= per ? "disabled" : ""}>Ver outras</button><button class="btn btn-red" data-x="raffle">${ic("shuffle", 18)} Sortear entre elas</button>` : ""}
+        <button class="btn btn-text wide" data-x="redo">Refazer o quiz</button>
+      </div>`;
+  };
+  const raffle = async () => {
+    const cards = $$("#sugList .dish", el);
+    if (!cards.length) return;
+    const win = Math.floor(Math.random() * cards.length);
+    $$('[data-x="raffle"],[data-x="more"]', el).forEach(b => { b.disabled = true; });
+    if (!reduceMotion()) {
+      const spins = cards.length * 2 + win;
+      for (let i = 0; i <= spins; i++) {
+        cards.forEach((c, k) => c.classList.toggle("hl", k === i % cards.length));
+        await sleep(60 + i * i * 1.2);
+      }
+    }
+    cards.forEach((c, k) => { c.classList.remove("hl"); c.classList.toggle("picked", k === win); });
+    toast("Sorteado! Bom apetite.");
+    await sleep(reduceMotion() ? 100 : 650);
+    if (S.quiz && S.quiz.s === s) { openDetail(cards[win].dataset.id); $$('[data-x="raffle"],[data-x="more"]', el).forEach(b => { b.disabled = false; }); }
+  };
+  el.addEventListener("click", e => {
+    const b = e.target.closest("[data-x]"); if (!b || b.disabled) return;
+    const x = b.dataset.x;
+    if (x === "close") closeSheet(s);
+    else if (x === "back") { if (Q.step > 0) { Q.step--; paint(); } }
+    else if (x === "ans") {
+      Q.ans[QUIZ_STEPS[Q.step].key] = b.dataset.v || null;
+      if (Q.step < QUIZ_STEPS.length - 1) Q.step++;
+      else { Q.res = quizRank(Q.ans); Q.page = 0; }
+      paint();
+    }
+    else if (x === "redo") { Q.step = 0; Q.ans = {}; Q.res = null; Q.page = 0; paint(); }
+    else if (x === "more") {
+      const pages = Math.ceil(Q.res.length / 5);
+      Q.page = (Q.page + 1) % pages;
+      if (Q.page === 0) toast("Essas eram todas. Voltando ao começo.");
+      paint();
+      const r = $(".qz-res", el); if (r) r.scrollTop = 0;
+    }
+    else if (x === "raffle") raffle();
+    else if (x === "classify") openClassify();
+  });
+  paint();
+}
+
+/* ---------- Classificação rápida (arrastar estilo Tinder) ---------- */
+let swQ = Promise.resolve();
+const enqueue = fn => (swQ = swQ.then(fn).catch(e => console.warn(e)));
+function openClassify() {
+  if (!canEdit()) return;
+  const C = { attr: null, all: false, queue: [], i: 0, undo: [], busy: false };
+  const s = openSheet({ cls: "full", html: `<div class="sw" id="sw"></div>`, onClose: () => { S.cls = null; } });
+  S.cls = C;
+  const el = s.el;
+  const A = () => ATTRS.find(a => a.key === C.attr);
+  const saveAttr = (id, attr, val) => enqueue(async () => {
+    try { if (!(await setQuizAttr(id, attr, val))) toast("Esse prato foi excluído ou você não pode editá-lo."); }
+    catch (e) { toast(errMsg(e)); }
+  });
+  const paintPick = () => {
+    const ps = pratosArr();
+    $("#sw", el).innerHTML = `<div class="sw-top"><span style="width:44px"></span><div class="sw-q">Classificar pratos</div><button class="icon-btn" data-x="close" aria-label="Fechar">${ic("close", 22)}</button></div>
+      <div class="sw-pick"><p>Escolha uma pergunta. Depois é só arrastar cada prato para o lado da resposta.</p>
+      ${ATTRS.map(a => { const falta = ps.filter(p => !(p.quiz && p.quiz[a.key])).length; return `<button class="pick-q" data-x="start" data-attr="${a.key}"><span><b>${esc(a.q)}</b><small>${falta ? `${falta} ${falta === 1 ? "prato sem resposta" : "pratos sem resposta"}` : "todos respondidos"}</small></span>${ic("chevR", 20)}</button>`; }).join("")}
+      <label class="toggle"><input type="checkbox" id="swAll" ${C.all ? "checked" : ""}> Revisar todos (inclui os já respondidos)</label>
+      ${ps.length ? "" : `<p class="muted">Cadastre alguns pratos primeiro.</p>`}</div>`;
+    $("#swAll", el).addEventListener("change", ev => { C.all = ev.target.checked; });
+  };
+  const start = attr => {
+    C.attr = attr; C.i = 0; C.undo = [];
+    C.queue = pratosArr().filter(p => C.all || !(p.quiz && p.quiz[attr])).sort(byName).map(p => p.id);
+    paintRun();
+  };
+  const cardHTML = (id, cls) => {
+    const p0 = S.pratos[id];
+    if (!p0) return `<div class="sw-card ${cls}" data-id="${esc(id)}"><div class="sw-photo"><span class="ph">🗑️</span></div><div class="sw-info"><b>Prato excluído</b><span class="muted">Pule este.</span></div></div>`;
+    const p = Object.assign({ id }, p0);
+    const cats = (S.card && S.card.categorias) || {};
+    const cur = p.quiz && p.quiz[C.attr];
+    return `<div class="sw-card ${cls}" data-id="${esc(id)}">
+      <div class="sw-photo">${validFoto(p.foto) ? `<img src="${p.foto}" alt="" draggable="false">` : `<span class="ph" aria-hidden="true">${esc(catIcon(p))}</span>`}</div>
+      <div class="sw-info"><b>${esc(p.nome)}</b><div class="chips">${(p.categorias || []).filter(c => cats[c]).map(c => `<span class="chip chip-static">${esc(cats[c].nome)}</span>`).join("")}${cur ? `<span class="chip chip-quiz">Hoje: ${esc(ATTR_LABEL[C.attr + ":" + cur] || cur)}</span>` : ""}</div></div>
+    </div>`;
+  };
+  const paintRun = enter => {
+    const a = A(); const n = C.queue.length;
+    const top = `<div class="sw-top"><button class="icon-btn" data-x="pick" aria-label="Outra pergunta">${ic("chevL", 22)}</button><div class="sw-q">${esc(a.q)}</div><button class="icon-btn" data-x="close" aria-label="Fechar">${ic("close", 22)}</button></div>`;
+    if (C.i >= n) {
+      $("#sw", el).innerHTML = top + `<div class="sw-prog"><span>${n} de ${n}</span><div class="prog"><i style="width:100%"></i></div></div>
+        <div class="empty" style="flex:1;justify-content:center"><div class="empty-art">🎉</div><h3>${n ? "Pronto!" : "Nada para classificar"}</h3><p>${n ? `Todos os pratos da lista têm resposta para “${esc(a.q)}”.` : `Todos os pratos já têm resposta para essa pergunta. Marque “Revisar todos” para mudar alguma.`}</p>
+        <button class="btn btn-red" data-x="pick">Escolher outra pergunta</button><button class="btn btn-text" data-x="close">Voltar</button></div>
+        <div class="sw-sub" style="justify-content:center"><button class="btn btn-text" data-x="undo" ${C.undo.length ? "" : "disabled"}>${ic("undo", 18)} Desfazer último</button></div>`;
+      return;
+    }
+    $("#sw", el).innerHTML = top + `<div class="sw-prog"><span>${C.i + 1} de ${n}</span><div class="prog"><i style="width:${C.i / n * 100}%"></i></div></div>
+      <div class="sw-stage"><div class="sw-side l" id="sideA">← ${esc(a.a[1])}</div><div class="sw-side r" id="sideB">${esc(a.b[1])} →</div>
+        <div class="sw-stack">${C.i + 1 < n ? cardHTML(C.queue[C.i + 1], "back") : ""}${cardHTML(C.queue[C.i], "front")}</div></div>
+      <div class="sw-btns"><button class="btn btn-a" data-x="A">${esc(a.a[1])}</button><button class="btn btn-ghost" data-x="skip">Pular</button><button class="btn btn-b" data-x="B">${esc(a.b[1])}</button></div>
+      <div class="sw-sub"><button class="btn btn-text" data-x="undo" ${C.undo.length ? "" : "disabled"}>${ic("undo", 18)} Desfazer último</button><span class="hint" style="margin:0">Arraste o card ou use os botões</span></div>`;
+    const card = $(".sw-card.front", el);
+    if (enter && !reduceMotion()) {
+      card.style.transition = "none";
+      card.style.transform = enter === "a" ? "translateX(-130%) rotate(-18deg)" : enter === "b" ? "translateX(130%) rotate(18deg)" : "translateY(-40%)";
+      card.style.opacity = enter === "skip" ? "0" : "1";
+      requestAnimationFrame(() => requestAnimationFrame(() => { card.style.transition = "transform .25s ease-out, opacity .25s"; card.style.transform = ""; card.style.opacity = "1"; }));
+    }
+    bindDrag(card);
+  };
+  const tint = (card, dx) => {
+    const ta = dx < 0 ? Math.min(1, -dx / 120) : 0, tb = dx > 0 ? Math.min(1, dx / 120) : 0;
+    card.style.setProperty("--ta", ta); card.style.setProperty("--tb", tb);
+    const sa = $("#sideA", el), sbx = $("#sideB", el);
+    if (sa) sa.classList.toggle("hot", ta > .5);
+    if (sbx) sbx.classList.toggle("hot", tb > .5);
+  };
+  const bindDrag = card => {
+    let sx = 0, sy = 0, dx = 0, dy = 0, drag = false, pid = null;
+    card.addEventListener("pointerdown", e => {
+      if (C.busy || (e.button != null && e.button > 0)) return;
+      drag = true; pid = e.pointerId; sx = e.clientX; sy = e.clientY; dx = dy = 0;
+      try { card.setPointerCapture(pid); } catch (x) {}
+      card.style.transition = "none"; card.style.cursor = "grabbing";
+    });
+    card.addEventListener("pointermove", e => {
+      if (!drag || e.pointerId !== pid) return;
+      dx = e.clientX - sx; dy = e.clientY - sy;
+      card.style.transform = `translate(${dx}px, ${dy * 0.3}px) rotate(${dx / 14}deg)`;
+      tint(card, dx);
+    });
+    const end = e => {
+      if (!drag || e.pointerId !== pid) return;
+      drag = false; card.style.cursor = "";
+      const th = Math.min(110, card.offsetWidth * 0.3);
+      if (Math.abs(dx) > th) commit(dx < 0 ? "a" : "b");
+      else { card.style.transition = "transform .2s ease-out"; card.style.transform = ""; tint(card, 0); }
+    };
+    card.addEventListener("pointerup", end);
+    card.addEventListener("pointercancel", end);
+    card.addEventListener("lostpointercapture", end);
+  };
+  const commit = async choice => {
+    if (C.busy || C.i >= C.queue.length) return;
+    C.busy = true;
+    const a = A(); const id = C.queue[C.i];
+    const card = $(".sw-card.front", el);
+    if (choice === "skip") C.undo.push({ id, kind: "skip" });
+    else {
+      const val = choice === "a" ? a.a[0] : a.b[0];
+      const prev = (S.pratos[id] && S.pratos[id].quiz && S.pratos[id].quiz[a.key]) || null;
+      C.undo.push({ id, kind: "set", prev, side: choice });
+      if (S.pratos[id]) saveAttr(id, a.key, val);
+    }
+    if (card && !reduceMotion()) {
+      card.style.transition = "transform .24s ease-in, opacity .24s";
+      card.style.transform = choice === "a" ? "translateX(-140%) rotate(-22deg)" : choice === "b" ? "translateX(140%) rotate(22deg)" : "translateY(-40%) scale(.9)";
+      if (choice === "skip") card.style.opacity = "0";
+      tint(card, choice === "a" ? -200 : choice === "b" ? 200 : 0);
+      await sleep(230);
+    }
+    C.i++; C.busy = false;
+    paintRun();
+  };
+  const undo = () => {
+    if (C.busy) return;
+    const u = C.undo.pop(); if (!u) return;
+    if (u.kind === "set" && S.pratos[u.id]) saveAttr(u.id, C.attr, u.prev);
+    C.i = Math.max(0, C.i - 1);
+    paintRun(u.kind === "set" ? u.side : "skip");
+    toast("Voltei o último prato");
+  };
+  el.addEventListener("click", e => {
+    const b = e.target.closest("[data-x]"); if (!b || b.disabled) return;
+    const x = b.dataset.x;
+    if (x === "close") closeSheet(s);
+    else if (x === "pick") paintPick();
+    else if (x === "start") start(b.dataset.attr);
+    else if (x === "A") commit("a");
+    else if (x === "B") commit("b");
+    else if (x === "skip") commit("skip");
+    else if (x === "undo") undo();
+  });
+  paintPick();
+}
+
+boot();
+</script>
+</body>
+</html>
