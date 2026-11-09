@@ -6,7 +6,7 @@
 // =====================================================================
 window.PRATO_CONFIG = {
   // Project URL. Exemplo: "https://abcdefghijklmnop.supabase.co"
-  supabaseUrl: "https://tcoeojgxzikrtwndomxa.supabase.co/rest/v1/",
+  supabaseUrl: "https://tcoeojgxzikrtwndomxa.supabase.co",
 
   // Publishable key (começa com sb_publishable_). Em projetos antigos, use a "anon public key".
   // Essa chave é pública mesmo: quem protege os dados são as regras do banco (supabase.sql).

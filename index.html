@@ -762,7 +762,10 @@ function fatal(title, text, retry) { S.screen = "fatal"; S.fatal = { title, text
 async function boot() {
   render();
   if (isStandalone()) lockPortrait();
-  const url = String(CFG.supabaseUrl || "").trim(), key = String(CFG.supabaseKey || "").trim();
+  let url = String(CFG.supabaseUrl || "").trim();
+  const key = String(CFG.supabaseKey || "").trim();
+  // Aceita a URL mesmo colada com /rest/v1/ ou outro caminho no fim: usa só https://xxxx.supabase.co
+  try { if (/^https?:\/\//i.test(url)) url = new URL(url).origin; } catch (e) {}
   if (!/^https?:\/\/[^ ]+$/.test(url) || !key || /COLE_AQUI/.test(url + key)) {
     return fatal("Falta configurar o app", "Abra o arquivo config.js no GitHub e cole a Project URL e a Publishable key do Supabase. O passo a passo está no guia de implantação.");
   }
@@ -778,6 +781,7 @@ async function boot() {
       const m = String(r.error.message || "");
       if (/anonymous/i.test(m)) return fatal("Falta um ajuste no Supabase", "Ative “Allow anonymous sign-ins” em Authentication → Sign In / Providers. Está no passo 2 do guia de implantação.");
       if (/Invalid API key|apikey|No API key/i.test(m)) return fatal("Chave inválida", "A Publishable key do config.js não confere com o projeto. Copie de novo no Supabase.");
+      if (/Invalid path/i.test(m)) return fatal("Endereço do Supabase errado", "No config.js, a Project URL deve terminar em .supabase.co, sem /rest/v1 nem nada depois.");
       return fatal("Não consegui entrar", errMsg(r.error), true);
     }
     session = r.data.session;
