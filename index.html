@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="theme-color" content="#FFFFFF">
-<meta name="description" content="O cardápio do casal: os pratos que vocês já fizeram ou pediram e um quiz para decidir o que comer.">
+<meta name="description" content="O cardápio do casal: os pratos que vocês já fizeram ou pediram e jogos rápidos para decidir o que comer.">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
@@ -15,6 +15,7 @@
 <link rel="icon" type="image/png" href="icon-192.png">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <script src="config.js"></script>
+<script src="logica.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.118.0/dist/umd/supabase.js"></script>
 <style>
 /* Layout: uma coluna mobile (360–430 px), capa de restaurante, abas que grudam no topo, painéis que sobem de baixo. */
@@ -22,7 +23,7 @@
   --red:#EA1D2C; --red-dark:#C2111E; --red-soft:#FDECEE;
   --ink:#3E3E3E; --ink-strong:#1E1E1E; --muted:#717171; --line:#EEEEEE; --soft:#F6F5F5;
   --bg:#FFFFFF; --star:#FCBB00; --green:#1F8A4C; --green-soft:#E7F5EC;
-  --opt-a:#2F6FEB; --opt-b:#E8790C;
+  --opt-a:#2F6FEB; --opt-b:#E8790C; --opt-ab:#7A5AF8;
   --font:-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   --nav-h:60px; --sat:env(safe-area-inset-top); --sab:env(safe-area-inset-bottom);
   color-scheme:light;
@@ -90,7 +91,8 @@ a{color:var(--red)}
 .fld{padding:4px 0 18px;border-bottom:1px solid var(--line);margin-bottom:16px}
 .fld:last-child{border-bottom:0;margin-bottom:0}
 .seg{display:grid;grid-template-columns:1fr 1fr;gap:8px}
-.seg-b{min-height:48px;border:1px solid #DCDCDC;border-radius:10px;display:flex;align-items:center;justify-content:center;gap:8px;font-weight:600;padding:0 8px;background:#fff;text-align:center}
+.seg-3{grid-template-columns:1fr 1fr 1fr}
+.seg-b{min-height:48px;border:1px solid #DCDCDC;border-radius:10px;display:flex;align-items:center;justify-content:center;gap:8px;font-weight:600;padding:0 8px;background:#fff;text-align:center;line-height:1.15}
 .seg-b[aria-pressed="true"]{border-color:var(--red);background:var(--red-soft);color:var(--red)}
 .seg-sm .seg-b{min-height:44px;font-size:14px}
 
@@ -134,7 +136,7 @@ a{color:var(--red)}
 .onb-form{display:flex;flex-direction:column;gap:12px;margin-top:8px}
 .onb-note{font-size:13px;color:var(--muted);text-align:center}
 
-/* Início */
+/* Início (Meus cardápios) */
 .home{padding:0 16px}
 .home-top{display:flex;align-items:center;justify-content:space-between;padding:14px 0 6px}
 .brand{display:flex;align-items:center;gap:10px;font-weight:800;color:var(--red);font-size:18px;letter-spacing:-.01em}
@@ -142,13 +144,11 @@ a{color:var(--red)}
 .home-hello h1{font-size:26px;font-weight:800;letter-spacing:-.01em}
 .home-hello p{color:var(--muted);margin-top:4px;font-size:16px}
 .home-actions{display:grid;gap:10px}
-.hact{display:flex;align-items:center;gap:14px;padding:16px;border-radius:14px;border:1px solid #E4E4E4;background:#fff;min-height:72px;width:100%}
+.hact{display:flex;align-items:center;gap:14px;padding:14px 16px;border-radius:14px;border:1px solid #E4E4E4;background:#fff;min-height:64px;width:100%}
 .hact b{display:block;font-size:16px;color:var(--ink-strong)}
-.hact small{display:block;color:var(--muted);font-size:13px;margin-top:2px}
-.hact .hact-ic{width:44px;height:44px;border-radius:12px;display:grid;place-items:center;background:var(--red-soft);color:var(--red);flex-shrink:0}
+.hact .hact-ic{width:40px;height:40px;border-radius:12px;display:grid;place-items:center;background:var(--red-soft);color:var(--red);flex-shrink:0}
 .hact-red{background:var(--red);border-color:var(--red)}
-.hact-red b,.hact-red small{color:#fff}
-.hact-red small{opacity:.85}
+.hact-red b{color:#fff}
 .hact-red .hact-ic{background:rgba(255,255,255,.18);color:#fff}
 .install-chip{display:flex;align-items:center;gap:10px;width:100%;margin-top:12px;padding:12px 14px;border-radius:12px;background:#EEF3FE;color:#24448F;font-size:14px;font-weight:600;text-align:left}
 .install-chip span{flex:1}
@@ -161,7 +161,7 @@ a{color:var(--red)}
 .my-info small{color:var(--muted);font-size:13px;font-variant-numeric:tabular-nums;letter-spacing:.06em}
 .my-badge{font-size:12px;font-weight:700;color:#fff;background:var(--red);padding:2px 7px;border-radius:999px;white-space:nowrap}
 .empty-sm{padding:20px 0;color:var(--muted)}
-.link-btn{display:block;margin:20px auto 0;color:var(--muted);font-size:14px;min-height:44px;text-decoration:underline}
+.link-btn{display:block;margin:24px auto 0;color:var(--muted);font-size:15px;font-weight:600;min-height:44px;padding:0 16px}
 
 /* Avisos */
 .banner{display:flex;align-items:center;gap:10px;margin:10px 16px 0;padding:12px 14px;border-radius:12px;font-size:14px;width:calc(100% - 32px);text-align:left}
@@ -188,7 +188,7 @@ a{color:var(--red)}
 .skel{background:linear-gradient(90deg,#F1F1F1 25%,#F8F8F8 50%,#F1F1F1 75%);background-size:200% 100%;animation:sk 1.2s infinite;border-radius:8px}
 @keyframes sk{to{background-position:-200% 0}}
 
-/* Busca e abas */
+/* Busca e abas de categoria */
 .search{position:relative;margin:14px 16px 4px}
 .search .ic{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--muted)}
 .search input{width:100%;min-height:44px;border-radius:10px;border:0;background:var(--soft);padding:0 12px 0 40px;font-size:16px;outline:none;-webkit-appearance:none;appearance:none}
@@ -200,7 +200,7 @@ a{color:var(--red)}
 .ctab.on::after{content:"";position:absolute;left:10px;right:10px;bottom:0;height:3px;border-radius:3px 3px 0 0;background:var(--red)}
 .ctab-add{color:var(--red);display:grid;place-items:center;min-width:44px}
 
-/* Seções e cards */
+/* Seções e cards de prato */
 .sec-title{font-size:18px;font-weight:800;padding:22px 16px 6px}
 .sec-sub{font-size:13px;color:var(--muted);padding:0 16px 4px}
 .dish{display:flex;align-items:stretch;gap:12px;width:100%;padding:14px 16px;border-bottom:1px solid var(--line);background:#fff;position:relative}
@@ -212,23 +212,22 @@ a{color:var(--red)}
 .dish-rate b{color:#8A6500;font-weight:700}
 .dish-last{font-size:13px;color:var(--muted)}
 .dish-thumb{width:92px;height:92px;border-radius:10px;overflow:hidden;flex-shrink:0;border:1px solid var(--line);background:var(--red-soft);display:grid;place-items:center}
-.dish-thumb img,.det-photo img,.foto-prev img,.sw-photo img,.tl-thumb img{width:100%;height:100%;object-fit:cover;display:block}
+.dish-thumb img,.det-photo img,.foto-prev img,.sw-photo img,.tl-thumb img,.vs-photo img{width:100%;height:100%;object-fit:cover;display:block}
 .ph{font-size:38px;line-height:1}
 .empty{padding:40px 24px;text-align:center;display:flex;flex-direction:column;align-items:center;gap:12px}
 .empty-art{font-size:46px;line-height:1}
 .empty h3{font-size:18px}
 .empty p{color:var(--muted);max-width:30ch}
 
-/* Navegação inferior e botões flutuantes */
-.bnav{position:fixed;left:50%;transform:translateX(-50%);bottom:0;width:100%;max-width:480px;height:calc(var(--nav-h) + var(--sab));padding-bottom:var(--sab);background:#fff;border-top:1px solid var(--line);display:grid;grid-template-columns:repeat(3,1fr);z-index:30}
-.bnav button{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;font-size:12px;font-weight:600;color:#8A8A8A;position:relative}
+/* Navegação inferior e botão de cadastrar */
+.bnav{position:fixed;left:50%;transform:translateX(-50%);bottom:0;width:100%;max-width:480px;height:calc(var(--nav-h) + var(--sab));padding-bottom:var(--sab);background:#fff;border-top:1px solid var(--line);display:grid;grid-template-columns:repeat(4,1fr);z-index:30}
+.bnav button{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;font-size:11.5px;font-weight:600;color:#8A8A8A;position:relative;white-space:nowrap}
 .bnav button.on{color:var(--red)}
 .nav-badge{position:absolute;top:6px;left:calc(50% + 6px);min-width:18px;height:18px;padding:0 5px;border-radius:999px;background:var(--red);color:#fff;font-size:11px;display:grid;place-items:center}
 .fabs{position:fixed;left:50%;transform:translateX(-50%);width:100%;max-width:480px;bottom:calc(var(--nav-h) + 14px + var(--sab));display:flex;justify-content:flex-end;align-items:center;gap:12px;padding:0 16px;z-index:25;pointer-events:none}
 .fabs>*{pointer-events:auto}
-.fab-quiz{height:52px;padding:0 20px 0 16px;border-radius:999px;background:var(--red);color:#fff;font-weight:700;font-size:15px;display:flex;align-items:center;gap:8px;box-shadow:0 6px 18px rgba(234,29,44,.35)}
-.fab-add{width:56px;height:56px;border-radius:50%;background:#fff;color:var(--red);display:grid;place-items:center;box-shadow:0 4px 14px rgba(0,0,0,.18);border:1px solid #F2D4D7}
-.fab-quiz:active,.fab-add:active{transform:scale(.96)}
+.fab-add{width:56px;height:56px;border-radius:50%;background:var(--red);color:#fff;display:grid;place-items:center;box-shadow:0 6px 18px rgba(234,29,44,.35)}
+.fab-add:active{transform:scale(.96)}
 
 /* Painéis que sobem de baixo */
 .sheet-wrap{position:fixed;inset:0;display:flex;align-items:flex-end;justify-content:center}
@@ -263,7 +262,7 @@ a{color:var(--red)}
 .created .row2{width:100%}
 .wa-link{font-size:14px;font-weight:600;color:var(--green);min-height:44px;display:inline-flex;align-items:center}
 
-/* Detalhe */
+/* Detalhe do prato */
 .det{display:flex;flex-direction:column;height:100%}
 .det-scroll{overflow-y:auto;-webkit-overflow-scrolling:touch;flex:1;overscroll-behavior:contain;padding-bottom:calc(24px + var(--sab))}
 .det-photo{position:relative;aspect-ratio:4/3;max-height:320px;width:100%;background:var(--red-soft);display:grid;place-items:center;overflow:hidden}
@@ -295,36 +294,65 @@ a{color:var(--red)}
 .quiz-attrs{display:flex;flex-direction:column;gap:14px;padding-top:8px}
 .qa-q{display:block;font-size:14px;font-weight:600;margin-bottom:6px}
 
-/* Quiz */
-.qz{display:flex;flex-direction:column;height:100%;padding:0 0 calc(16px + var(--sab))}
+/* Barra de progresso e topo dos jogos */
 .qz-top{display:flex;align-items:center;gap:6px;padding:8px 8px 4px}
+.qz-top .step{font-size:13px;color:var(--muted);font-weight:600;min-width:64px;text-align:center;font-variant-numeric:tabular-nums}
 .prog{flex:1;height:6px;border-radius:6px;background:#F0F0F0;overflow:hidden}
 .prog i{display:block;height:100%;background:var(--red);border-radius:6px;transition:width .25s}
-.qz-main{flex:1;display:flex;flex-direction:column;padding:18px 20px;gap:22px;overflow-y:auto}
-.qz-step{font-size:13px;font-weight:700;color:var(--red);text-transform:uppercase;letter-spacing:.06em}
-.qz-q{font-size:28px;font-weight:800;line-height:1.15;letter-spacing:-.01em}
-.qz-opts{display:flex;flex-direction:column;gap:12px;margin-top:auto}
-.qopt{display:flex;align-items:center;gap:14px;min-height:76px;padding:0 18px;border-radius:16px;border:1.5px solid #E2E2E2;font-size:19px;font-weight:700;color:var(--ink-strong);background:#fff}
-.qopt:active{border-color:var(--red);background:var(--red-soft)}
-.qopt .qe{font-size:30px;width:40px;text-align:center}
-.qskip{min-height:52px;font-weight:700;color:var(--muted);border-radius:12px;background:var(--soft);text-align:center}
-.qz-res{flex:1;overflow-y:auto;padding:4px 0 8px}
-.qz-res h2{font-size:24px;font-weight:800;padding:8px 16px 2px}
-.qz-res>.muted{padding:0 16px 6px;font-size:14px}
-.qz-res .banner{margin:10px 16px 6px}
-.sug-list{margin-top:6px;border-top:1px solid var(--line)}
-.sug-list .dish{transition:background .1s, box-shadow .1s}
-.sug-list .dish.hl{background:var(--red-soft)}
-.sug-list .dish.picked{background:var(--red-soft);box-shadow:inset 4px 0 0 var(--red)}
-.qz-actions{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:12px 16px 0;border-top:1px solid var(--line)}
-.qz-actions .wide{grid-column:1/-1}
+
+/* Aba "O que comer" */
+.dec{padding:0 16px 8px}
+.dec-intro{color:var(--muted);padding:14px 0 2px}
+.filt{margin-top:12px;border:1px solid var(--line);border-radius:16px;padding:14px;display:flex;flex-direction:column;gap:12px}
+.filt .lbl{font-size:13px;margin-bottom:6px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em}
+.filt .seg-b{min-height:42px;font-size:14px}
+.filt-more{display:flex;flex-direction:column;gap:12px}
+.filt-foot{display:flex;justify-content:space-between;align-items:center;gap:8px;font-size:14px;border-top:1px solid var(--line);padding-top:10px}
+.filt-foot b{color:var(--ink-strong)}
+.modo{display:flex;gap:14px;align-items:center;width:100%;padding:16px;border-radius:16px;border:1px solid #E4E4E4;margin-top:12px;text-align:left;background:#fff}
+.modo:active{background:#FAFAFA}
+.modo-ic{width:52px;height:52px;border-radius:14px;background:var(--red-soft);display:grid;place-items:center;font-size:26px;flex-shrink:0}
+.modo-txt{flex:1;min-width:0}
+.modo b{display:block;font-size:17px;color:var(--ink-strong)}
+.modo small{display:block;color:var(--muted);font-size:13px;margin-top:2px}
+.dec .btn-lg{margin-top:12px}
+
+/* Telas de duelo: um em cima, um embaixo */
+.vs{display:flex;flex-direction:column;height:100%;padding-bottom:calc(10px + var(--sab))}
+.vs-q{text-align:center;font-size:24px;font-weight:800;padding:4px 16px 10px;color:var(--ink-strong);text-wrap:balance}
+.vs-arena{flex:1;display:flex;flex-direction:column;padding:0 16px;min-height:0}
+.vs-card{flex:1;min-height:0;display:flex;border:1.5px solid #E2E2E2;border-radius:18px;overflow:hidden;background:#fff;text-align:left;transition:transform .12s, border-color .12s, box-shadow .12s;width:100%}
+.vs-card:active{transform:scale(.98);border-color:var(--red);box-shadow:0 0 0 3px rgba(234,29,44,.15)}
+.vs-card.static:active{transform:none;border-color:#E2E2E2;box-shadow:none}
+.vs-photo{width:42%;background:var(--red-soft);display:grid;place-items:center;flex-shrink:0;overflow:hidden}
+.vs-photo .ph{font-size:56px}
+.vs-photo.multi .ph{font-size:34px}
+.vs-info{flex:1;padding:14px;display:flex;flex-direction:column;justify-content:center;gap:6px;min-width:0}
+.vs-info b{font-size:20px;line-height:1.2;color:var(--ink-strong);overflow-wrap:anywhere}
+.vs-info small{font-size:13px;color:var(--muted)}
+.vs-or{align-self:center;margin:-16px 0;z-index:2;width:48px;height:48px;border-radius:50%;background:var(--red);color:#fff;font-weight:800;font-size:15px;display:grid;place-items:center;border:4px solid #fff;flex-shrink:0}
+.vs-actions{padding:12px 16px 0;display:flex;flex-direction:column;gap:4px}
+.vs-actions .row2 .btn{min-height:50px}
+.vs-scroll{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;padding-bottom:8px}
+.vs-scroll h2{font-size:24px;font-weight:800;padding:8px 16px 2px}
+.vs-scroll>.muted{padding:0 16px 8px;font-size:14px}
+.rk-sec{font-size:13px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;padding:16px 16px 4px}
+.rk-badge{font-size:12px;font-weight:700;background:var(--green-soft);color:var(--green);padding:3px 8px;border-radius:999px;white-space:nowrap}
+.rk-badge.alt{background:var(--soft);color:var(--muted)}
+.rk-out .tl-row{opacity:.55}
+.rk-out summary{list-style:none;cursor:pointer}
+.rk-out summary::-webkit-details-marker{display:none}
+.winner{margin:8px 16px 4px;padding:18px;border-radius:18px;background:linear-gradient(135deg,#EA1D2C,#C8101E);color:#fff;display:flex;gap:14px;align-items:center;width:calc(100% - 32px);text-align:left}
+.winner .tl-thumb{width:72px;height:72px;border-radius:14px;background:rgba(255,255,255,.2)}
+.winner small{display:block;opacity:.85;font-size:13px}
+.winner b{display:block;font-size:22px;line-height:1.2}
 
 /* Classificação rápida (arrastar) */
 .sw{display:flex;flex-direction:column;height:100%;padding-bottom:calc(12px + var(--sab))}
 .sw-top{display:flex;align-items:center;gap:6px;padding:8px 8px 0}
 .sw-q{flex:1;text-align:center;font-weight:800;font-size:18px;color:var(--ink-strong)}
 .sw-prog{padding:6px 20px 0;display:flex;align-items:center;gap:10px;font-size:13px;color:var(--muted);font-variant-numeric:tabular-nums}
-.sw-stage{flex:1;position:relative;display:flex;align-items:center;justify-content:center;padding:12px 44px;min-height:300px;overflow:hidden}
+.sw-stage{flex:1;position:relative;display:flex;align-items:center;justify-content:center;padding:12px 44px;min-height:280px;overflow:hidden}
 .sw-side{position:absolute;top:50%;transform:translateY(-50%);writing-mode:vertical-rl;font-weight:800;font-size:15px;letter-spacing:.04em;padding:14px 6px;border-radius:10px;transition:transform .15s, background .15s, color .15s}
 .sw-side.l{left:6px;color:var(--opt-a);background:#EEF3FE;transform:translateY(-50%) rotate(180deg)}
 .sw-side.r{right:6px;color:var(--opt-b);background:#FEF2E6}
@@ -339,10 +367,11 @@ a{color:var(--red)}
 .sw-photo .ph{font-size:90px}
 .sw-info{padding:14px 16px 16px;display:flex;flex-direction:column;gap:8px}
 .sw-info b{font-size:20px;color:var(--ink-strong);line-height:1.2}
-.sw-btns{display:grid;grid-template-columns:1fr auto 1fr;gap:8px;padding:6px 16px 0}
-.sw-btns .btn{min-height:52px}
+.sw-btns{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;padding:6px 16px 0}
+.sw-btns .btn{min-height:52px;padding:0 8px}
 .btn-a{background:var(--opt-a);color:#fff}
 .btn-b{background:var(--opt-b);color:#fff}
+.btn-ab{background:var(--opt-ab);color:#fff}
 .sw-sub{display:flex;justify-content:space-between;align-items:center;padding:6px 16px 0}
 .sw-pick{padding:8px 16px 16px;display:flex;flex-direction:column;gap:10px;overflow-y:auto;flex:1}
 .sw-pick>p{color:var(--muted);padding:4px 4px 6px}
@@ -364,7 +393,6 @@ a{color:var(--red)}
 .tut-step{display:flex;gap:14px;align-items:flex-start;padding:14px;border:1px solid var(--line);border-radius:14px;background:#fff}
 .tut-n{width:28px;height:28px;border-radius:50%;background:var(--red);color:#fff;font-weight:800;display:grid;place-items:center;flex-shrink:0;font-size:14px}
 .tut-txt{flex:1;display:flex;flex-direction:column;gap:4px;padding-top:3px}
-.tut-txt b{color:var(--ink-strong)}
 .tut-txt small{color:var(--muted);font-size:13px}
 .tut-ico{width:44px;height:44px;border-radius:12px;background:var(--soft);display:grid;place-items:center;color:#0A7AFF;flex-shrink:0}
 .tut-ico.and{color:#1E8E3E}
@@ -401,6 +429,7 @@ a{color:var(--red)}
 .cfg-link span{flex:1}
 .cfg-link b{display:block;color:var(--ink-strong)}
 .cfg-link small{display:block;color:var(--muted);font-size:12px}
+.cfg-link.danger b,.cfg-link.danger .ic{color:var(--red)}
 .cat-ic{width:36px;height:36px;border-radius:10px;background:var(--soft);display:grid;place-items:center;font-size:20px;flex-shrink:0}
 .emoji-grid{display:grid;grid-template-columns:repeat(8,1fr);gap:4px}
 .emoji-grid button{height:44px;border-radius:10px;font-size:24px;display:grid;place-items:center}
@@ -429,9 +458,32 @@ a{color:var(--red)}
 
 <script>
 "use strict";
+/* =====================================================================
+ * PRATO A DOIS · interface
+ * Regras puras e jogos ficam em logica.js (window.Logica). Aqui: tela, rede e eventos.
+ *
+ * MÁQUINAS DE ESTADO DESTE ARQUIVO (todas explícitas no objeto S):
+ *   S.screen  "splash" → "fatal" | "onboard" → "home" ⇄ "card"        (ver TELAS)
+ *   S.tab     "cardapio" | "decidir" | "historico" | "config"          (ver ABAS)
+ *   S.carga   "carregando" → "pronto" | "lento" | "erro"; "ausente" volta pra home   (setCarga)
+ *   S.sync    "desligado" → "conectando" → "ao-vivo" | "periodico"     (setSync)
+ *   Falhas de início: FALHAS[codigo] → tela "fatal"
+ *   Instalação: estadoInstalacao() → "instalado" | "ios-safari" | "ios-outro" | "android" | "computador"
+ *   Jogos (duelo de categorias, isso ou aquilo) e papéis: logica.js
+ *
+ * Ações de clique: todo botão global tem data-act="..." (switch em "Ações globais").
+ * Painéis têm botões com data-x="..." tratados dentro do próprio painel.
+ * Depuração: window.__prato expõe S, T, Logica e a versão.
+ * ===================================================================== */
+
 /* ============================== Configuração ============================== */
 const APP_NAME = "Prato a Dois";
+const APP_VERSAO = "2.0.0";
+const BANCO_VERSAO_MIN = 2; // "os dois" nos atributos precisa do banco v2 (supabase.sql)
 const CFG = window.PRATO_CONFIG || {};
+const L = window.Logica;
+const TELAS = ["splash", "fatal", "onboard", "home", "card"];
+const ABAS = [["cardapio", "book", "Cardápio"], ["decidir", "sparkle", "O que comer"], ["historico", "clock", "Histórico"], ["config", "sliders", "Configurações"]];
 
 /* ============================== Comportamento de app (sem zoom, em pé) ============================== */
 ["gesturestart", "gesturechange", "gestureend"].forEach(t => document.addEventListener(t, e => e.preventDefault(), { passive: false }));
@@ -460,6 +512,7 @@ const byName = (a, b) => a.nome.localeCompare(b.nome, "pt-BR", { sensitivity: "b
 const reduceMotion = () => window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches;
 const nowISO = () => new Date().toISOString();
 const tsOf = s => { const t = Date.parse(s || ""); return isNaN(t) ? 0 : t; };
+const plural = (n, um, varios) => `${n} ${n === 1 ? um : varios}`;
 const CODE_CHARS = "ABCDEFGHJKMNPQRSTUVWXYZ23456789"; // sem 0, O, 1, I, L
 function uuid() {
   if (window.crypto && crypto.randomUUID) return crypto.randomUUID();
@@ -467,34 +520,34 @@ function uuid() {
   const h = Array.from(b, x => x.toString(16).padStart(2, "0")).join("");
   return `${h.slice(0, 8)}-${h.slice(8, 12)}-${h.slice(12, 16)}-${h.slice(16, 20)}-${h.slice(20)}`;
 }
+/* Armazenamento do aparelho. Chaves: pd:nome, pd:meus, pd:ultimo, pd:filtros, pd:tutorial (+ pd-auth da sessão). */
 const MEM = {};
 const LS = {
   get(k) { try { const v = localStorage.getItem(k); return v == null ? (MEM[k] ?? null) : v; } catch (e) { return MEM[k] ?? null; } },
   set(k, v) { MEM[k] = v; try { localStorage.setItem(k, v); } catch (e) {} },
+  del(k) { delete MEM[k]; try { localStorage.removeItem(k); } catch (e) {} },
   json(k) { try { return JSON.parse(LS.get(k) || "null"); } catch (e) { return null; } }
 };
 
-/* Plataforma */
+/* Plataforma e instalação */
 const UA = navigator.userAgent || "";
 const isIOS = /iPhone|iPad|iPod/.test(UA) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
 const isAndroid = /Android/i.test(UA);
 const isMobile = isIOS || isAndroid;
 const isStandalone = () => (window.matchMedia && matchMedia("(display-mode: standalone)").matches) || navigator.standalone === true;
-const iosBrowser = () => /CriOS/.test(UA) ? "chrome" : (/FxiOS|EdgiOS|OPiOS|GSA\//.test(UA) ? "outro" : "safari");
+function estadoInstalacao() {
+  if (isStandalone()) return "instalado";
+  if (isIOS) return /CriOS|FxiOS|EdgiOS|OPiOS|GSA\//.test(UA) ? "ios-outro" : "ios-safari";
+  if (isAndroid) return "android";
+  return "computador";
+}
 let installPrompt = null;
 window.addEventListener("beforeinstallprompt", e => { e.preventDefault(); installPrompt = e; const b = $("#instNow"); if (b) b.hidden = false; });
 window.addEventListener("appinstalled", () => { installPrompt = null; LS.set("pd:tutorial", "1"); toast("App instalado! Abra pelo ícone na tela inicial."); });
 
-const ATTRS = [
-  { key: "tempo", q: "Rápido ou elaborado?", a: ["rapido", "Rápido", "⚡"], b: ["elaborado", "Elaborado", "👨‍🍳"] },
-  { key: "peso", q: "Leve ou encorpado?", a: ["leve", "Leve", "🥗"], b: ["encorpado", "Encorpado", "🍖"] },
-  { key: "sabor", q: "Salgado ou doce?", a: ["salgado", "Salgado", "🧂"], b: ["doce", "Doce", "🍫"] },
-  { key: "ocasiao", q: "Dia a dia ou ocasião especial?", a: ["diadia", "Dia a dia", "🏠"], b: ["especial", "Ocasião especial", "🥂"] }
-];
-const ATTR_LABEL = {};
-ATTRS.forEach(a => { ATTR_LABEL[a.key + ":" + a.a[0]] = a.a[1]; ATTR_LABEL[a.key + ":" + a.b[0]] = a.b[1]; });
-const QUIZ_STEPS = [{ key: "origem", q: "Fazer em casa ou pedir?", a: ["casa", "Fazer em casa", "🏠"], b: ["restaurante", "Pedir", "🛵"] }].concat(ATTRS);
-const ROLE_LABEL = { dono: "Dono", editor: "Editor", leitor: "Leitor", pendente: "Aguardando aprovação", visitante: "Leitor" };
+const ATTRS = L.ATRIBUTOS;
+const ATTR_LABEL = L.ROTULO_VALOR;
+const ROLE_LABEL = L.ROTULO_PAPEL;
 const EMOJIS = ["🍴","🍔","🍕","🍝","🍚","🥢","🍣","🔥","🥩","🥗","🌯","🍲","🥪","🍟","🍰","🌮","🍜","🥞","🍳","🥘","🍗","🐟","🦐","🥟","🍛","🧀","🥐","🍦","🍫","🥤","🍺","🥑"];
 
 /* ============================== Ícones ============================== */
@@ -525,7 +578,9 @@ const ICONS = {
   download: '<path d="M12 4v11M7.5 10.5L12 15l4.5-4.5M5 20h14"/>',
   bell: '<path d="M6 16.5V11a6 6 0 0 1 12 0v5.5l1.5 2h-15z"/><path d="M10 20.5a2 2 0 0 0 4 0"/>',
   eye: '<path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12z"/><circle cx="12" cy="12" r="3"/>',
-  crown: '<path d="M4 18h16M5 15l-1.5-8 5 4L12 5l3.5 6 5-4L19 15z"/>'
+  crown: '<path d="M4 18h16M5 15l-1.5-8 5 4L12 5l3.5 6 5-4L19 15z"/>',
+  logout: '<path d="M14.5 4.5H18A1.5 1.5 0 0 1 19.5 6v12a1.5 1.5 0 0 1-1.5 1.5h-3.5"/><path d="M10 16.5L5.5 12 10 7.5M5.5 12H15"/>',
+  db: '<ellipse cx="12" cy="6" rx="7" ry="2.5"/><path d="M5 6v12c0 1.4 3.1 2.5 7 2.5s7-1.1 7-2.5V6M5 12c0 1.4 3.1 2.5 7 2.5s7-1.1 7-2.5"/>'
 };
 const FILLED = {
   star: '<path d="M12 2.8l2.8 5.9 6.4.8-4.7 4.4 1.2 6.4L12 17.2l-5.7 3.1 1.2-6.4-4.7-4.4 6.4-.8z"/>',
@@ -545,15 +600,18 @@ function starsHTML(v, size = 13) {
 /* ============================== Estado ============================== */
 const S = {
   uid: null, nome: "", screen: "splash", fatal: null,
-  meus: {}, cur: null, card: null, pratos: {}, loaded: { card: false, pratos: false },
-  tab: "cardapio", search: "", activeCat: null, slow: false, subErr: "", missing: false, nameSynced: false,
-  histRange: "90", histLimit: 30, detail: null, cardScroll: 0, channel: null, rtOK: false, pollT: null
+  meus: {}, cur: null, card: null, pratos: {},
+  tab: "cardapio", search: "", activeCat: null,
+  carga: "carregando", cargaErro: "", sync: "desligado", versaoBanco: null,
+  filtros: Object.assign({}, L.FILTROS_VAZIOS), filtrosAbertos: false,
+  nameSynced: false, histRange: "90", histLimit: 30, detail: null, cardScroll: 0, channel: null, pollT: null
 };
 /* Tabelas espelhadas do Supabase (só do cardápio aberto) */
 const T = { cardapios: new Map(), membros: new Map(), categorias: new Map(), pratos: new Map(), notas: new Map(), feitos: new Map(), fotos: new Map() };
 const PK = { cardapios: ["codigo"], membros: ["cardapio", "user_id"], categorias: ["id"], pratos: ["id"], notas: ["prato_id", "user_id"], feitos: ["id"], fotos: ["prato_id"] };
 const keyOf = (t, r) => PK[t].map(k => r[k]).join("|");
 const put = (t, r) => { if (r) T[t].set(keyOf(t, r), r); };
+const temDados = () => !!(S.cur && T.cardapios.get(S.cur));
 function dropPrato(id) {
   T.pratos.delete(id); T.fotos.delete(id);
   for (const [k, n] of T.notas) if (n.prato_id === id) T.notas.delete(k);
@@ -579,6 +637,14 @@ function compose() {
   S.pratos = pr;
 }
 function changed() { compose(); scheduleRender(); }
+/* Transições das máquinas de carga e sincronização */
+const CARGAS = ["carregando", "pronto", "lento", "erro"];
+function setCarga(estado, erro) {
+  if (!CARGAS.includes(estado)) throw new Error("Estado de carga inválido: " + estado);
+  S.carga = estado; S.cargaErro = erro || ""; scheduleRender();
+}
+const SYNCS = { desligado: "desligada", conectando: "conectando…", "ao-vivo": "ao vivo", periodico: "a cada 20 s" };
+function setSync(estado) { if (!(estado in SYNCS)) throw new Error("Estado de sincronização inválido: " + estado); S.sync = estado; }
 
 /* ============================== Supabase ============================== */
 let sb = null;
@@ -589,6 +655,8 @@ function errMsg(e) {
   const m = String((e && (e.message || e.error_description || e.msg)) || "");
   const c = e && e.code;
   if (/Só o dono/.test(m)) return "Só o dono pode fazer isso.";
+  if (/Mudança de papel não permitida/.test(m)) return "Essa mudança de papel não é permitida. Atualize a tela e tente de novo.";
+  if (c === "23514" && /tempo|peso|sabor|ocasiao/.test(m)) return "O banco ainda não aceita “os dois”. Rode o supabase.sql de novo no Supabase (versão 2).";
   if (c === "42501" || /row-level security|permission denied/i.test(m)) return "Você não tem permissão para isso neste cardápio.";
   if (c === "23505") return "Isso já existe.";
   if (isNet(e)) return "Sem conexão com o servidor. Confira a internet e tente de novo.";
@@ -599,6 +667,11 @@ async function act(fn, opts = {}) {
   try { await fn(); return true; }
   catch (e) { console.warn(e); if (!opts.silent) toast(opts.msg || errMsg(e)); return false; }
 }
+async function checarVersaoBanco() {
+  try { S.versaoBanco = Number(await q(sb.rpc("versao_banco"))) || 1; } catch (e) { S.versaoBanco = 1; }
+  if (S.screen === "card") scheduleRender();
+}
+const bancoAceitaAmbos = () => S.versaoBanco == null || S.versaoBanco >= BANCO_VERSAO_MIN;
 
 /* ============================== Painéis, avisos, diálogos ============================== */
 const sheetStack = [];
@@ -697,8 +770,8 @@ function tutStep(n, icon, cls, html, sub) {
   return `<li class="tut-step"><span class="tut-n">${n}</span><span class="tut-txt"><span>${html}</span>${sub ? `<small>${sub}</small>` : ""}</span><span class="tut-ico ${cls}">${icon}</span></li>`;
 }
 const K = s => `<span class="tut-key">${s}</span>`;
-function stepsIOS() {
-  if (iosBrowser() !== "safari") {
+function stepsIOS(estado) {
+  if (estado === "ios-outro") {
     return tutStep(1, ic("shareIOS", 24), "", `Toque no ícone de ${K("compartilhar")} ao lado do endereço, no alto da tela.`, "No Chrome do iPhone ele fica no canto direito da barra de endereço.")
       + tutStep(2, ic("addHome", 24), "", `Toque em ${K("Adicionar à Tela de Início")}.`, "Não achou? Role a lista ou toque em Ver mais.")
       + tutStep(3, ic("check", 24), "", `Toque em ${K("Adicionar")}.`)
@@ -717,11 +790,12 @@ function stepsAndroid() {
     + tutStep(4, BRAND(26), "and", `Abra o <b>${APP_NAME}</b> pelo ícone na tela inicial.`, "No Samsung Internet: menu ☰ → Adicionar página a → Tela inicial.");
 }
 function openTutorial(opts = {}) {
-  let plat = isAndroid ? "android" : "ios";
+  const estado = estadoInstalacao();
+  let plat = estado === "android" ? "android" : "ios";
   const s = openSheet({ cls: "full", html: `<div class="tut" id="tut"></div>`, onClose: () => LS.set("pd:tutorial", "1") });
   const el = s.el;
   const paint = () => {
-    if (isStandalone()) {
+    if (estado === "instalado") {
       $("#tut", el).innerHTML = `<div class="sheet-head"><h3>Instalar no celular</h3><button class="icon-btn" data-x="close" aria-label="Fechar">${ic("close")}</button></div>
         <div class="tut-scroll"><div class="tut-ok"><div class="ok-ic">${ic("check", 30)}</div><h2>Tudo certo!</h2><p class="muted">Você já está usando o ${APP_NAME} instalado, como aplicativo.</p></div></div>
         <div class="tut-foot"><button class="btn btn-red btn-lg" data-x="close">Fechar</button></div>`;
@@ -731,10 +805,10 @@ function openTutorial(opts = {}) {
       <div class="tut-scroll">
         <div class="tut-hero">${BRAND(52)}<h2>Coloque o ${APP_NAME} na tela de início</h2><p>Assim ele abre como um aplicativo, em tela cheia e sem a barra do navegador.</p></div>
         ${isIOS && opts.first ? `<div class="banner banner-warn" style="margin:0 0 12px;width:100%">${ic("bell", 18)}<span class="grow">No iPhone, instale <b>antes</b> de criar ou entrar num cardápio. O app instalado guarda os dados separado do Safari.</span></div>` : ""}
-        ${!isMobile ? `<div class="banner banner-info" style="margin:0 0 12px;width:100%">${ic("phone", 18)}<span class="grow">Você está num computador. Abra este link no celular para instalar: <b>${esc(appUrl())}</b></span><button class="btn btn-sm btn-ghost" data-x="copyUrl">Copiar</button></div>` : ""}
+        ${estado === "computador" ? `<div class="banner banner-info" style="margin:0 0 12px;width:100%">${ic("phone", 18)}<span class="grow">Você está num computador. Abra este link no celular para instalar: <b>${esc(appUrl())}</b></span><button class="btn btn-sm btn-ghost" data-x="copyUrl">Copiar</button></div>` : ""}
         <button class="btn btn-red btn-lg" id="instNow" data-x="install" ${installPrompt ? "" : "hidden"} style="margin-bottom:12px">${ic("download", 20)} Instalar agora</button>
         <div class="tut-tabs"><div class="seg-pill" role="group" aria-label="Tipo de celular" style="margin:0"><button data-x="plat" data-v="ios" aria-pressed="${plat === "ios"}">iPhone</button><button data-x="plat" data-v="android" aria-pressed="${plat === "android"}">Android</button></div></div>
-        <ol class="tut-steps">${plat === "ios" ? stepsIOS() : stepsAndroid()}</ol>
+        <ol class="tut-steps">${plat === "ios" ? stepsIOS(estado) : stepsAndroid()}</ol>
       </div>
       <div class="tut-foot"><button class="btn btn-red btn-lg" data-x="done">Pronto, já instalei</button><button class="btn btn-text" data-x="close">${opts.first ? "Agora não, continuar no navegador" : "Fechar"}</button></div>`;
   };
@@ -745,7 +819,7 @@ function openTutorial(opts = {}) {
     else if (x === "plat") { plat = b.dataset.v; paint(); }
     else if (x === "copyUrl") copyText(appUrl(), "Link copiado");
     else if (x === "install" && installPrompt) {
-      try { installPrompt.prompt(); const r = await installPrompt.userChoice; if (r && r.outcome === "accepted") { closeSheet(s); } } catch (err) {}
+      try { installPrompt.prompt(); const r = await installPrompt.userChoice; if (r && r.outcome === "accepted") closeSheet(s); } catch (err) {}
       installPrompt = null;
     }
     else if (x === "done") { closeSheet(s); if (!isStandalone()) toast(`Agora abra o ${APP_NAME} pelo ícone na tela de início.`, { ms: 6000 }); }
@@ -758,7 +832,17 @@ function maybeTutorial() {
 }
 
 /* ============================== Inicialização ============================== */
-function fatal(title, text, retry) { S.screen = "fatal"; S.fatal = { title, text, retry }; render(); }
+/* Falhas que impedem o app de abrir. Cada uma leva à tela "fatal" com texto e, se fizer sentido, "Tentar de novo". */
+const FALHAS = {
+  semConfig:     { titulo: "Falta configurar o app", texto: "Abra o arquivo config.js no GitHub e cole a Project URL e a Publishable key do Supabase. O passo a passo está no guia de implantação.", retry: false },
+  semBiblioteca: { titulo: "Sem conexão", texto: "Não consegui carregar o app. Confira a internet e tente de novo.", retry: true },
+  configInvalida:{ titulo: "Configuração inválida", texto: "Confira a Project URL e a chave no config.js.", retry: false },
+  semAnonimo:    { titulo: "Falta um ajuste no Supabase", texto: "Ative “Allow anonymous sign-ins” em Authentication → Sign In / Providers. Está no passo 1.5 do guia de implantação.", retry: true },
+  chaveInvalida: { titulo: "Chave inválida", texto: "A Publishable key do config.js não confere com o projeto. Copie de novo no Supabase.", retry: false },
+  urlInvalida:   { titulo: "Endereço do Supabase errado", texto: "No config.js, a Project URL deve terminar em .supabase.co, sem /rest/v1 nem nada depois.", retry: false },
+  semLogin:      { titulo: "Não consegui entrar", texto: "Tente de novo em alguns segundos.", retry: true }
+};
+function falhar(codigo, texto) { S.screen = "fatal"; S.fatal = Object.assign({ codigo }, FALHAS[codigo], texto ? { texto } : {}); render(); }
 async function boot() {
   render();
   if (isStandalone()) lockPortrait();
@@ -766,32 +850,40 @@ async function boot() {
   const key = String(CFG.supabaseKey || "").trim();
   // Aceita a URL mesmo colada com /rest/v1/ ou outro caminho no fim: usa só https://xxxx.supabase.co
   try { if (/^https?:\/\//i.test(url)) url = new URL(url).origin; } catch (e) {}
-  if (!/^https?:\/\/[^ ]+$/.test(url) || !key || /COLE_AQUI/.test(url + key)) {
-    return fatal("Falta configurar o app", "Abra o arquivo config.js no GitHub e cole a Project URL e a Publishable key do Supabase. O passo a passo está no guia de implantação.");
-  }
-  if (!window.supabase || !window.supabase.createClient) return fatal("Sem conexão", "Não consegui carregar o app. Confira a internet e tente de novo.", true);
+  if (!/^https?:\/\/[^ ]+$/.test(url) || !key || /COLE_AQUI/.test(url + key)) return falhar("semConfig");
+  if (!window.supabase || !window.supabase.createClient) return falhar("semBiblioteca");
   try {
     sb = window.supabase.createClient(url, key, { auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: false, storageKey: "pd-auth" } });
-  } catch (e) { return fatal("Configuração inválida", "Confira a Project URL e a chave no config.js."); }
+  } catch (e) { return falhar("configInvalida"); }
   let session = null;
   try { const r = await sb.auth.getSession(); session = r.data && r.data.session; } catch (e) {}
   if (!session) {
     const r = await sb.auth.signInAnonymously();
     if (r.error) {
       const m = String(r.error.message || "");
-      if (/anonymous/i.test(m)) return fatal("Falta um ajuste no Supabase", "Ative “Allow anonymous sign-ins” em Authentication → Sign In / Providers. Está no passo 2 do guia de implantação.");
-      if (/Invalid API key|apikey|No API key/i.test(m)) return fatal("Chave inválida", "A Publishable key do config.js não confere com o projeto. Copie de novo no Supabase.");
-      if (/Invalid path/i.test(m)) return fatal("Endereço do Supabase errado", "No config.js, a Project URL deve terminar em .supabase.co, sem /rest/v1 nem nada depois.");
-      return fatal("Não consegui entrar", errMsg(r.error), true);
+      if (/anonymous/i.test(m)) return falhar("semAnonimo");
+      if (/Invalid API key|apikey|No API key/i.test(m)) return falhar("chaveInvalida");
+      if (/Invalid path/i.test(m)) return falhar("urlInvalida");
+      return falhar("semLogin", errMsg(r.error));
     }
     session = r.data.session;
   }
   S.uid = session.user.id;
   S.nome = LS.get("pd:nome") || "";
   S.meus = LS.json("pd:meus") || {};
+  S.filtros = Object.assign({}, L.FILTROS_VAZIOS, LS.json("pd:filtros") || {});
+  checarVersaoBanco();
   if (!S.nome) { S.screen = "onboard"; render(); maybeTutorial(); return; }
-  goHome();
+  const alvo = cardapioInicial();
+  if (alvo) openCardapio(alvo); else goHome();
   maybeTutorial();
+}
+/* Com cardápio salvo, o app abre direto nele: o último aberto ou o mais recente da lista. */
+function cardapioInicial() {
+  const ultimo = LS.get("pd:ultimo");
+  if (ultimo && S.meus[ultimo]) return ultimo;
+  const lista = Object.entries(S.meus).sort((a, b) => (b[1].ts || 0) - (a[1].ts || 0));
+  return lista.length ? lista[0][0] : null;
 }
 document.addEventListener("visibilitychange", () => {
   if (document.visibilityState !== "visible" || !sb || !S.uid) return;
@@ -813,14 +905,15 @@ function scheduleRender() {
   requestAnimationFrame(() => { rafPending = false; if (S.screen === "card") renderCardScreen(false); renderDetail(); });
 }
 function render() {
+  if (!TELAS.includes(S.screen)) throw new Error("Tela inválida: " + S.screen);
   const v = $("#view");
   const showNav = S.screen === "card";
   $("#bnav").hidden = !showNav;
   v.classList.toggle("noNav", !showNav);
   if (S.screen !== "card") $("#fabs").hidden = true;
   if (S.screen === "splash") v.innerHTML = `<div class="center-screen">${BRAND(64)}<div class="loader" aria-label="Carregando"></div></div>`;
-  else if (S.screen === "fatal") v.innerHTML = `<div class="center-screen">${BRAND(56)}<h2>${esc(S.fatal.title)}</h2><p class="muted">${esc(S.fatal.text)}</p>${S.fatal.retry ? `<button class="btn btn-red" data-act="reload">Tentar de novo</button>` : ""}</div>`;
-  else if (S.screen === "onboard") { v.innerHTML = viewOnboard(); }
+  else if (S.screen === "fatal") v.innerHTML = `<div class="center-screen">${BRAND(56)}<h2>${esc(S.fatal.titulo)}</h2><p class="muted">${esc(S.fatal.texto)}</p>${S.fatal.retry ? `<button class="btn btn-red" data-act="reload">Tentar de novo</button>` : ""}</div>`;
+  else if (S.screen === "onboard") v.innerHTML = viewOnboard();
   else if (S.screen === "home") v.innerHTML = viewHome();
   else if (S.screen === "card") renderCardScreen(true);
 }
@@ -845,8 +938,8 @@ function viewHome() {
     <header class="home-top"><div class="brand">${BRAND(34)}<span>${APP_NAME}</span></div></header>
     <div class="home-hello"><h1>Oi, ${esc(S.nome)}!</h1><p>Bora decidir o que comer?</p></div>
     <div class="home-actions">
-      <button class="hact hact-red" data-act="create"><span class="hact-ic">${ic("plus", 22)}</span><span><b>Criar cardápio novo</b><small>Para você e seu par cadastrarem juntos</small></span></button>
-      <button class="hact" data-act="join"><span class="hact-ic">${ic("users", 22)}</span><span><b>Entrar com código</b><small>Recebeu um código de 5 letras e números?</small></span></button>
+      <button class="hact hact-red" data-act="create"><span class="hact-ic">${ic("plus", 22)}</span><b>Criar cardápio novo</b></button>
+      <button class="hact" data-act="join"><span class="hact-ic">${ic("users", 22)}</span><b>Entrar com código</b></button>
     </div>
     ${!isStandalone() ? `<button class="install-chip" data-act="tutorial">${ic("phone", 20)}<span>Instale o ${APP_NAME} na tela de início para usar como aplicativo</span>${ic("chevR", 18)}</button>` : ""}
     <h2 class="h2">Meus cardápios</h2>
@@ -854,12 +947,12 @@ function viewHome() {
       <button class="myitem" data-act="open" data-code="${esc(code)}">
         <span class="my-logo">${esc((m.nome || "?").trim().charAt(0).toUpperCase() || "?")}</span>
         <span class="my-info"><b>${esc(m.nome || "Cardápio")}</b><small>${esc(code)}</small></span>
-        ${m.papel === "dono" && m.pend ? `<span class="my-badge">${m.pend} ${m.pend === 1 ? "pedido" : "pedidos"}</span>` : ""}
+        ${m.papel === "dono" && m.pend ? `<span class="my-badge">${plural(m.pend, "pedido", "pedidos")}</span>` : ""}
         <span class="role role-${esc(m.papel || "leitor")}">${esc(ROLE_LABEL[m.papel] || "Leitor")}</span>
         <span class="muted">${ic("chevR", 18)}</span>
       </button>`).join("")}</div>`
       : `<p class="empty-sm">Nenhum cardápio por aqui ainda. Crie o de vocês ou entre com o código que te mandaram.</p>`}
-    <button class="link-btn" data-act="rename-me">Não é ${esc(S.nome)}? Trocar nome</button>
+    <button class="link-btn" data-act="sair">Sair</button>
   </div>`;
 }
 function goHome() {
@@ -896,15 +989,23 @@ function openCardapio(code) {
   unsubscribe();
   closeAllSheets();
   Object.values(T).forEach(m => m.clear());
-  Object.assign(S, { cur: code, card: null, pratos: {}, loaded: { card: false, pratos: false }, tab: "cardapio", search: "", activeCat: null, slow: false, subErr: "", missing: false, nameSynced: false, histLimit: 30, cardScroll: 0 });
+  Object.assign(S, { cur: code, card: null, pratos: {}, tab: "cardapio", search: "", activeCat: null, nameSynced: false, histLimit: 30, cardScroll: 0 });
+  S.carga = "carregando"; S.cargaErro = "";
   S.screen = "card";
   setMeu(code, {}, true);
+  LS.set("pd:ultimo", code);
   window.scrollTo(0, 0);
   render();
   clearTimeout(S.slowT);
-  S.slowT = setTimeout(() => { if (S.cur === code && !S.loaded.pratos) { S.slow = true; scheduleRender(); } }, 10000);
+  S.slowT = setTimeout(() => { if (S.cur === code && S.carga === "carregando") setCarga("lento"); }, 10000);
   subscribe(code);
   loadAll(code);
+}
+function cardapioSumiu(code) {
+  delete S.meus[code]; saveMeus();
+  if (LS.get("pd:ultimo") === code) LS.del("pd:ultimo");
+  goHome();
+  toast("Esse cardápio não está mais disponível para você.", { ms: 5000 });
 }
 async function loadAll(code) {
   try {
@@ -912,20 +1013,18 @@ async function loadAll(code) {
     const res = await Promise.all(TBL.map(t => q2(() => sb.from(t).select("*").eq(col(t), code))));
     if (S.cur !== code) return;
     TBL.forEach((t, i) => { T[t].clear(); res[i].forEach(r => put(t, r)); });
-    S.loaded.card = S.loaded.pratos = true; S.slow = false; S.subErr = "";
-    S.missing = !T.cardapios.get(code);
-    if (S.missing) { delete S.meus[code]; saveMeus(); }
-    else {
-      const me = T.membros.get(code + "|" + S.uid);
-      setMeu(code, { nome: T.cardapios.get(code).nome, papel: me ? me.papel : "visitante", pend: Array.from(T.membros.values()).filter(m => m.papel === "pendente").length });
-      if (me && me.nome !== S.nome && !S.nameSynced) { S.nameSynced = true; act(() => q(sb.rpc("renomear_me", { p_nome: S.nome })), { silent: true }); }
-    }
+    if (!T.cardapios.get(code)) return cardapioSumiu(code);
+    clearTimeout(S.slowT);
+    S.carga = "pronto"; S.cargaErro = "";
+    const me = T.membros.get(code + "|" + S.uid);
+    setMeu(code, { nome: T.cardapios.get(code).nome, papel: me ? me.papel : "visitante", pend: Array.from(T.membros.values()).filter(m => m.papel === "pendente").length });
+    if (me && me.nome !== S.nome && !S.nameSynced) { S.nameSynced = true; act(() => q(sb.rpc("renomear_me", { p_nome: S.nome })), { silent: true }); }
     changed();
     await loadFotos(code);
   } catch (e) {
     console.warn("carregar", e);
     if (S.cur !== code) return;
-    S.subErr = errMsg(e); scheduleRender();
+    setCarga("erro", errMsg(e));
   }
 }
 async function loadFotos(code) {
@@ -949,7 +1048,7 @@ async function refetchFoto(id) {
 }
 function subscribe(code) {
   unsubscribe();
-  S.rtOK = false;
+  setSync("conectando");
   try {
     const ch = sb.channel("pd-" + code + "-" + Math.random().toString(36).slice(2, 7));
     ["membros", "categorias", "pratos", "notas", "feitos", "fotos"].forEach(t => {
@@ -959,12 +1058,13 @@ function subscribe(code) {
     });
     ch.on("postgres_changes", { event: "UPDATE", schema: "public", table: "cardapios", filter: "codigo=eq." + code }, p => onRT("cardapios", p, code));
     ch.subscribe(st => {
-      if (st === "SUBSCRIBED") { S.rtOK = true; stopPoll(); }
-      else if (st === "CHANNEL_ERROR" || st === "TIMED_OUT" || st === "CLOSED") { S.rtOK = false; if (S.cur === code) startPoll(); }
+      if (S.cur !== code) return;
+      if (st === "SUBSCRIBED") { stopPoll(); setSync("ao-vivo"); }
+      else if (st === "CHANNEL_ERROR" || st === "TIMED_OUT" || st === "CLOSED") startPoll();
     });
     S.channel = ch;
   } catch (e) { console.warn("realtime", e); }
-  S.rtT = setTimeout(() => { if (!S.rtOK && S.cur === code) startPoll(); }, 8000);
+  S.rtT = setTimeout(() => { if (S.sync !== "ao-vivo" && S.cur === code) startPoll(); }, 8000);
 }
 function onRT(t, p, code) {
   if (S.cur !== code) return;
@@ -980,13 +1080,15 @@ function onRT(t, p, code) {
   put(t, row); changed();
 }
 function startPoll() {
+  setSync("periodico");
   if (S.pollT) return;
   S.pollT = setInterval(() => { if (document.visibilityState === "visible" && S.screen === "card" && S.cur) refreshNow(false); }, Number(CFG.pollMs) || 20000);
 }
 function stopPoll() { clearInterval(S.pollT); S.pollT = null; }
 function unsubscribe() {
   if (S.channel && sb) { try { sb.removeChannel(S.channel); } catch (e) {} }
-  S.channel = null; S.rtOK = false; stopPoll(); clearTimeout(S.rtT); clearTimeout(S.slowT);
+  S.channel = null; stopPoll(); clearTimeout(S.rtT); clearTimeout(S.slowT);
+  setSync("desligado");
 }
 async function refreshNow(manual) {
   if (!S.cur) return;
@@ -994,14 +1096,14 @@ async function refreshNow(manual) {
   if (btn) btn.classList.add("spin");
   await loadAll(S.cur);
   const b = $('[data-act="refresh"]'); if (b) b.classList.remove("spin");
-  if (manual) toast(S.subErr ? S.subErr : "Cardápio atualizado");
+  if (manual) toast(S.carga === "erro" ? S.cargaErro : "Cardápio atualizado");
 }
 
 /* ---------- Regras do cardápio ---------- */
 const papelOf = d => !d ? "visitante" : ((d.membros && d.membros[S.uid] && d.membros[S.uid].papel) || "visitante");
 const myPapel = () => papelOf(S.card);
-const canEdit = () => ["dono", "editor"].includes(myPapel());
-const isDono = () => myPapel() === "dono";
+const canEdit = () => L.podeEditar(myPapel());
+const isDono = () => L.ehDono(myPapel());
 const pendentes = d => Object.entries((d && d.membros) || {}).filter(([, m]) => m && m.papel === "pendente").map(([id, m]) => Object.assign({ id }, m));
 function memberName(id) {
   const m = S.card && S.card.membros && S.card.membros[id];
@@ -1020,14 +1122,13 @@ function catIcon(p) {
   return "🍴";
 }
 function notasList(p) { return Object.entries(p.notas || {}).filter(([, v]) => typeof v === "number" && v >= 1 && v <= 5); }
-function media(p) { const l = notasList(p); return l.length ? l.reduce((a, [, v]) => a + v, 0) / l.length : null; }
+const media = p => L.media(p);
 function feitosList(p) {
   return Object.entries(p.feitos || {}).filter(([, v]) => v && /^\d{4}-\d{2}-\d{2}$/.test(v.d))
     .map(([id, v]) => ({ id, d: v.d, por: v.por, ts: v.ts || 0 }))
     .sort((a, b) => b.d.localeCompare(a.d) || (b.ts - a.ts));
 }
-const ultima = p => { const l = feitosList(p); return l.length ? l[0].d : null; };
-const hasQuiz = p => ATTRS.some(a => p.quiz && p.quiz[a.key]);
+const ultima = p => L.ultimaData(p);
 function lastTxt(p) {
   const s = ultima(p);
   if (!s) return p.origem === "restaurante" ? "ainda não pedido" : "ainda não feito";
@@ -1060,13 +1161,16 @@ function origHTML(p) {
     ? `<span class="orig-rest">${ic("store", 14)}${esc(p.restaurante || "De restaurante")}</span>`
     : `<span class="orig-home">Feito em casa</span>`;
 }
-function dishCard(p) {
+function rateHTML(p) {
   const avg = media(p);
+  return avg != null ? `${starsHTML(avg)}<b>${fmt1(avg)}</b>` : `<span class="muted">Sem avaliação</span>`;
+}
+function dishCard(p) {
   return `<button class="dish" data-act="dish" data-id="${esc(p.id)}">
     <span class="dish-info">
       <span class="dish-name">${esc(p.nome)}</span>
       <span class="dish-orig">${origHTML(p)}</span>
-      <span class="dish-rate">${avg != null ? `${starsHTML(avg)}<b>${fmt1(avg)}</b>` : `<span class="muted">Sem avaliação</span>`}</span>
+      <span class="dish-rate">${rateHTML(p)}</span>
       <span class="dish-last">${esc(lastTxt(p))}</span>
     </span>
     ${thumb(p, "dish-thumb")}
@@ -1076,23 +1180,17 @@ function dishCard(p) {
 /* ---------- Tela do cardápio ---------- */
 function renderNav() {
   const pend = isDono() ? pendentes(S.card).length : 0;
-  const items = [["cardapio", "book", "Cardápio"], ["historico", "clock", "Histórico"], ["config", "sliders", "Configurações"]];
-  $("#bnav").innerHTML = items.map(([k, i, l]) => `<button data-act="tab" data-tab="${k}" class="${S.tab === k ? "on" : ""}" aria-current="${S.tab === k ? "page" : "false"}">${ic(i, 22)}<span>${l}</span>${k === "config" && pend ? `<span class="nav-badge">${pend}</span>` : ""}</button>`).join("");
+  $("#bnav").innerHTML = ABAS.map(([k, i, l]) => `<button data-act="tab" data-tab="${k}" class="${S.tab === k ? "on" : ""}" aria-current="${S.tab === k ? "page" : "false"}">${ic(i, 22)}<span>${l}</span>${k === "config" && pend ? `<span class="nav-badge">${pend}</span>` : ""}</button>`).join("");
 }
 function renderFabs() {
   const f = $("#fabs");
-  const show = S.screen === "card" && S.tab === "cardapio" && S.card && !S.missing;
+  const show = S.screen === "card" && S.tab === "cardapio" && temDados() && canEdit();
   f.hidden = !show;
-  if (!show) return;
-  f.innerHTML = `<button class="fab-quiz" data-act="quiz">${ic("sparkle", 20)}<span>O que vamos comer?</span></button>${canEdit() ? `<button class="fab-add" data-act="add" aria-label="Cadastrar prato">${ic("plus", 26)}</button>` : ""}`;
+  if (show) f.innerHTML = `<button class="fab-add" data-act="add" aria-label="Cadastrar prato">${ic("plus", 26)}</button>`;
 }
 function renderCardScreen(full) {
   const v = $("#view");
   renderNav();
-  if (S.missing) {
-    v.innerHTML = `<div class="center-screen"><div class="empty-art">🍽</div><h2>Cardápio não encontrado</h2><p class="muted">O cardápio ${esc(S.cur)} não existe ou você não faz mais parte dele.</p><button class="btn btn-red" data-act="home">Voltar para meus cardápios</button></div>`;
-    $("#bnav").hidden = true; renderFabs(); return;
-  }
   $("#bnav").hidden = false;
   if (S.tab === "cardapio") {
     if (full || !$("#sections")) {
@@ -1102,7 +1200,8 @@ function renderCardScreen(full) {
       qi.addEventListener("input", () => { S.search = qi.value; updateCardParts(); });
     }
     updateCardParts();
-  } else if (S.tab === "historico") v.innerHTML = viewHist();
+  } else if (S.tab === "decidir") v.innerHTML = viewDecidir();
+  else if (S.tab === "historico") v.innerHTML = viewHist();
   else v.innerHTML = viewConfig();
   renderFabs();
 }
@@ -1121,7 +1220,7 @@ function updateCardParts() {
   const tabs = $("#cattabs");
   const gs = groups(list);
   const searching = !!S.search.trim();
-  tabs.hidden = searching || !S.loaded.pratos || (!gs.length && !canEdit());
+  tabs.hidden = searching || !temDados() || (!gs.length && !canEdit());
   if (!S.activeCat || !gs.some(g => g.id === S.activeCat)) S.activeCat = gs[0] ? gs[0].id : null;
   tabs.innerHTML = gs.map(g => `<button class="ctab ${g.id === S.activeCat ? "on" : ""}" data-act="tabcat" data-cat="${esc(g.id)}">${esc(g.nome)}</button>`).join("")
     + (canEdit() ? `<button class="ctab ctab-add" data-act="newcat" aria-label="Criar categoria">${ic("plus", 20)}</button>` : "");
@@ -1142,19 +1241,19 @@ function coverHTML() {
     <h1 class="cover-name">${esc(c.nome)}</h1>
     <div class="cover-meta">
       ${g != null ? `<span class="cover-rate">${ic("star", 15)} ${fmt1(g)}</span><span class="dot"></span>` : `<span>Sem avaliação</span><span class="dot"></span>`}
-      <span>${ps.length} ${ps.length === 1 ? "prato" : "pratos"}</span><span class="dot"></span>
+      <span>${plural(ps.length, "prato", "pratos")}</span><span class="dot"></span>
       <span class="role role-${esc(pap)}">${esc(ROLE_LABEL[pap])}</span>
     </div></div>`;
 }
 function bannersHTML() {
   let h = "";
-  if (S.subErr) h += `<div class="banner banner-red"><span class="grow">${esc(S.subErr)}</span><button class="btn btn-sm btn-ghost" data-act="retry">Tentar de novo</button></div>`;
-  else if (S.slow) h += `<div class="banner banner-warn"><span class="grow">Está demorando para carregar. Confira a internet.</span><button class="btn btn-sm btn-ghost" data-act="retry">Tentar de novo</button></div>`;
+  if (S.carga === "erro") h += `<div class="banner banner-red"><span class="grow">${esc(S.cargaErro)}</span><button class="btn btn-sm btn-ghost" data-act="retry">Tentar de novo</button></div>`;
+  else if (S.carga === "lento") h += `<div class="banner banner-warn"><span class="grow">Está demorando para carregar. Confira a internet.</span><button class="btn btn-sm btn-ghost" data-act="retry">Tentar de novo</button></div>`;
   if (!S.card) return h;
   const pap = myPapel();
   if (pap === "dono") {
     const n = pendentes(S.card).length;
-    if (n) h += `<button class="banner banner-warn" data-act="goto-config">${ic("bell", 18)}<span class="grow"><b>${n} ${n === 1 ? "pedido" : "pedidos"} para editar</b> esperando sua aprovação</span><b>Ver</b></button>`;
+    if (n) h += `<button class="banner banner-warn" data-act="goto-config">${ic("bell", 18)}<span class="grow"><b>${plural(n, "pedido", "pedidos")} para editar</b> esperando sua aprovação</span><b>Ver</b></button>`;
   } else if (pap === "pendente") {
     h += `<div class="banner banner-info">${ic("clock", 18)}<span class="grow">Pedido enviado. Assim que o dono aprovar, você poderá cadastrar e avaliar.</span></div>`;
   } else if (pap === "leitor" || pap === "visitante") {
@@ -1163,7 +1262,7 @@ function bannersHTML() {
   return h;
 }
 function sectionsHTML(list, gs) {
-  if (!S.loaded.pratos) return [1, 2, 3].map(() => `<div class="dish"><span class="dish-info"><span class="skel" style="height:18px;width:60%"></span><span class="skel" style="height:14px;width:40%"></span><span class="skel" style="height:14px;width:50%"></span></span><span class="dish-thumb skel"></span></div>`).join("");
+  if (!temDados()) return [1, 2, 3].map(() => `<div class="dish"><span class="dish-info"><span class="skel" style="height:18px;width:60%"></span><span class="skel" style="height:14px;width:40%"></span><span class="skel" style="height:14px;width:50%"></span></span><span class="dish-thumb skel"></span></div>`).join("");
   if (!list.length) {
     return `<div class="empty"><div class="empty-art">🍳</div><h3>Nenhum prato ainda</h3><p>${canEdit() ? "Que tal cadastrar o último que vocês fizeram?" : "Quando os donos cadastrarem pratos, eles aparecem aqui."}</p>${canEdit() ? `<button class="btn btn-red" data-act="add">${ic("plus", 18)} Cadastrar prato</button>` : ""}</div>`;
   }
@@ -1171,12 +1270,12 @@ function sectionsHTML(list, gs) {
   if (qs) {
     const found = list.filter(p => norm(p.nome).includes(qs) || norm(p.restaurante).includes(qs)).sort(byName);
     if (!found.length) return `<div class="empty"><div class="empty-art">🔎</div><h3>Nada com “${esc(S.search.trim())}”</h3><p>Confira a grafia ou procure por outro nome.</p></div>`;
-    return `<section class="sec"><h2 class="sec-title">${found.length} ${found.length === 1 ? "resultado" : "resultados"}</h2>${found.map(dishCard).join("")}</section>`;
+    return `<section class="sec"><h2 class="sec-title">${plural(found.length, "resultado", "resultados")}</h2>${found.map(dishCard).join("")}</section>`;
   }
   return gs.map(g => `<section class="sec" id="sec-${esc(g.id)}" data-cat="${esc(g.id)}"><h2 class="sec-title">${esc(g.nome)}</h2>${g.items.map(dishCard).join("")}</section>`).join("");
 }
 
-/* Abas que acompanham a rolagem */
+/* Abas de categoria que acompanham a rolagem */
 let spyLock = 0, spyRaf = false;
 function setActiveTab(id, scrollTabs) {
   if (!id) return;
@@ -1211,6 +1310,191 @@ function scrollToCat(id) {
   window.scrollTo({ top: y, behavior: reduceMotion() ? "auto" : "smooth" });
 }
 
+/* ---------- Aba "O que comer" ---------- */
+function topbar(title) {
+  return `<div class="topbar"><button class="icon-btn" data-act="home" aria-label="Meus cardápios">${ic("chevL", 22)}</button><h1>${esc(title)}</h1><button class="icon-btn" data-act="refresh" aria-label="Atualizar">${ic("refresh", 20)}</button></div>`;
+}
+const poolAtual = () => L.filtrar(pratosArr(), S.filtros);
+function categoriasNoPool(pool) {
+  const ids = catsSorted().map(c => c.id).filter(id => pool.some(x => (x.prato.categorias || []).includes(id)));
+  const known = new Set(catsSorted().map(c => c.id));
+  if (pool.some(x => !(x.prato.categorias || []).some(id => known.has(id)))) ids.push("_outros");
+  return ids;
+}
+function filtroSeg(k, a, b) {
+  const v = S.filtros[k] || "";
+  const btn = (val, rot) => `<button class="seg-b" data-act="filt" data-k="${k}" data-v="${val}" aria-pressed="${v === val}">${esc(rot)}</button>`;
+  return `<div class="seg seg-3">${btn(a[0], a[1])}${btn("", "Tanto faz")}${btn(b[0], b[1])}</div>`;
+}
+function viewDecidir() {
+  if (!temDados()) return topbar("O que vamos comer?") + `<div class="center-screen"><div class="loader"></div></div>`;
+  const ps = pratosArr();
+  if (!ps.length) return topbar("O que vamos comer?") + `<div class="empty"><div class="empty-art">🍳</div><h3>Ainda não há pratos</h3><p>Cadastrem alguns pratos na aba Cardápio e voltem aqui para decidir.</p></div>`;
+  const pool = poolAtual();
+  const n = pool.length;
+  const extras = ATTRS.filter(a => S.filtros[a.key]).length;
+  const nf = L.filtrosAtivos(S.filtros);
+  const comAttr = ps.filter(L.temAtributo).length;
+  const poucos = canEdit() && comAttr < ps.length / 2;
+  const ncat = categoriasNoPool(pool).length;
+  return topbar("O que vamos comer?") + `<div class="dec">
+    <p class="dec-intro">Filtre se quiser e escolha um jeito de decidir.</p>
+    <section class="filt" aria-label="Filtros">
+      <div><span class="lbl">Onde</span>${filtroSeg("origem", ["casa", "Em casa"], ["restaurante", "Pedir"])}</div>
+      <button class="collapse" data-act="filt-mais" aria-expanded="${S.filtrosAbertos}">${ic("sliders", 18)}<span>Mais filtros${extras ? ` <small>${plural(extras, "ativo", "ativos")}</small>` : ""}</span>${ic("chevD", 18)}</button>
+      <div class="filt-more" ${S.filtrosAbertos ? "" : "hidden"}>
+        ${ATTRS.map(a => `<div><span class="lbl">${esc(a.q)}</span>${filtroSeg(a.key, a.a, a.b)}</div>`).join("")}
+        <p class="hint" style="margin:0">Pratos marcados com “os dois” ou ainda sem resposta continuam no páreo.</p>
+      </div>
+      <div class="filt-foot"><b id="poolCount">${plural(n, "prato no páreo", "pratos no páreo")}</b>${nf ? `<button class="btn-text" data-act="filt-limpar">Limpar filtros</button>` : ""}</div>
+    </section>
+    ${poucos ? `<div class="banner banner-info" style="margin:12px 0 0;width:100%">${ic("sparkle", 18)}<span class="grow">Só ${comAttr} de ${ps.length} pratos têm tempo, peso, sabor e ocasião. Os filtros ficam melhores com eles.</span><button class="btn btn-sm btn-red" data-act="classify">Classificar</button></div>` : ""}
+    <button class="modo" data-act="jogo-categorias" ${ncat ? "" : "disabled"}><span class="modo-ic" aria-hidden="true">🍕</span><span class="modo-txt"><b>Escolher pela categoria</b><small>Hambúrguer ou pizza? Pizza ou risoto? Vai eliminando até sobrar a de hoje.</small></span>${ic("chevR", 20)}</button>
+    <button class="modo" data-act="jogo-iou" ${n ? "" : "disabled"}><span class="modo-ic" aria-hidden="true">🆚</span><span class="modo-txt"><b>Isso ou aquilo</b><small>Prato contra prato. No fim sai um ranking, e dá para refinar.</small></span>${ic("chevR", 20)}</button>
+    <button class="btn btn-ghost btn-lg" data-act="sortear" ${n ? "" : "disabled"}>${ic("shuffle", 18)} Sortear um prato</button>
+    ${n ? "" : `<p class="hint" style="text-align:center">Nenhum prato passa nesses filtros. Tente afrouxar algum.</p>`}
+  </div>`;
+}
+function setFiltro(k, v) {
+  S.filtros = Object.assign({}, S.filtros, { [k]: v || null });
+  LS.set("pd:filtros", JSON.stringify(S.filtros));
+  renderCardScreen(false);
+}
+function sortearDe(ids, msg) {
+  const vivos = ids.filter(id => S.pratos[id]);
+  if (!vivos.length) return;
+  const id = vivos[Math.floor(Math.random() * vivos.length)];
+  openDetail(id);
+  toast(msg || `Sorteado: ${S.pratos[id].nome}`);
+}
+
+/* Cartões dos duelos (um em cima, um embaixo) */
+function vsCardPrato(id, x, estatico) {
+  const p0 = S.pratos[id];
+  if (!p0) return `<button class="vs-card ${estatico ? "static" : ""}" ${x ? `data-x="${x}"` : ""}><span class="vs-photo"><span class="ph">🗑️</span></span><span class="vs-info"><b>Prato excluído</b><small>Pode escolher o outro.</small></span></button>`;
+  const p = Object.assign({ id }, p0);
+  return `<button class="vs-card ${estatico ? "static" : ""}" ${x ? `data-x="${x}"` : ""} aria-label="${esc(p.nome)}">
+    <span class="vs-photo">${validFoto(p.foto) ? `<img src="${p.foto}" alt="" draggable="false">` : `<span class="ph" aria-hidden="true">${esc(catIcon(p))}</span>`}</span>
+    <span class="vs-info"><b>${esc(p.nome)}</b><span class="dish-orig">${origHTML(p)}</span><span class="dish-rate">${rateHTML(p)}</span><small>${esc(lastTxt(p))}</small></span>
+  </button>`;
+}
+function catInfo(id) {
+  if (id === "_outros") return { nome: "Outros", icone: "🍴" };
+  const c = S.card && S.card.categorias && S.card.categorias[id];
+  return c ? { nome: c.nome, icone: c.icone || "🍴" } : { nome: "Categoria excluída", icone: "🍴" };
+}
+function pratosDasCategorias(pool, ids) {
+  const known = new Set(catsSorted().map(c => c.id));
+  return pool.filter(x => ids.some(id => id === "_outros"
+    ? !(x.prato.categorias || []).some(c => known.has(c))
+    : (x.prato.categorias || []).includes(id)));
+}
+const nomesCats = ids => { const n = ids.map(id => catInfo(id).nome); return n.length > 1 ? n.slice(0, -1).join(", ") + " e " + n[n.length - 1] : n[0] || ""; };
+function vsCardCats(ids, pool, x) {
+  const ps = pratosDasCategorias(pool, ids);
+  const icones = ids.slice(0, 3).map(id => catInfo(id).icone).join("");
+  const prev = ps.slice(0, 3).map(i => i.prato.nome).join(", ") + (ps.length > 3 ? "…" : "");
+  return `<button class="vs-card" data-x="${x}" aria-label="${esc(nomesCats(ids))}">
+    <span class="vs-photo ${ids.length > 1 ? "multi" : ""}"><span class="ph" aria-hidden="true">${esc(icones)}</span></span>
+    <span class="vs-info"><b>${esc(nomesCats(ids))}</b><small>${plural(ps.length, "prato", "pratos")}</small><small>${esc(prev)}</small></span>
+  </button>`;
+}
+
+/* Jogo 1 · Duelo de categorias (máquina em logica.js: dueloIniciar/dueloEscolher/dueloDesfazer) */
+function openDueloCategorias() {
+  const pool = poolAtual();
+  let st = L.dueloIniciar(categoriasNoPool(pool));
+  const s = openSheet({ cls: "full", html: `<div class="vs" id="vs"></div>` });
+  const el = s.el;
+  const paint = () => {
+    const box = $("#vs", el);
+    if (st.fase === "duelando") {
+      const desafiante = st.fila[0];
+      box.innerHTML = `<div class="qz-top"><button class="icon-btn" data-x="desfazer" aria-label="Desfazer" ${st.anterior ? "" : "disabled"}>${ic("undo", 21)}</button><div class="prog"><i style="width:${st.passo / Math.max(1, st.total) * 100}%"></i></div><span class="step">${st.passo + 1} de ${st.total}</span><button class="icon-btn" data-x="close" aria-label="Fechar">${ic("close", 22)}</button></div>
+        <h2 class="vs-q">${esc(nomesCats(st.campeao))} ou ${esc(catInfo(desafiante).nome)}?</h2>
+        <div class="vs-arena">${vsCardCats(st.campeao, pool, "campeao")}<span class="vs-or" aria-hidden="true">ou</span>${vsCardCats([desafiante], pool, "desafiante")}</div>
+        <div class="vs-actions"><button class="btn btn-ghost btn-lg" data-x="os-dois">Tanto faz, fico com os dois</button></div>`;
+      return;
+    }
+    const itens = L.ordenarSugestoes(pratosDasCategorias(pool, st.campeao), todayStr());
+    const ids = itens.map(i => i.prato.id);
+    box.innerHTML = `<div class="qz-top"><button class="icon-btn" data-x="desfazer" aria-label="Desfazer" ${st.anterior ? "" : "disabled"}>${ic("undo", 21)}</button><div class="prog"><i style="width:100%"></i></div><button class="icon-btn" data-x="close" aria-label="Fechar">${ic("close", 22)}</button></div>
+      <div class="vs-scroll"><h2>Hoje é dia de ${esc(nomesCats(st.campeao))}</h2><p class="muted">${plural(ids.length, "prato", "pratos")} nessa linha. Toque num prato para ver os detalhes.</p>
+        <div style="border-top:1px solid var(--line)">${itens.map(i => dishCard(i.prato)).join("")}</div></div>
+      <div class="vs-actions"><div class="row2"><button class="btn btn-red" data-x="iou" ${ids.length > 1 ? "" : "disabled"}>🆚 Isso ou aquilo</button><button class="btn btn-ghost" data-x="sortear" ${ids.length ? "" : "disabled"}>${ic("shuffle", 18)} Sortear</button></div><button class="btn btn-text" data-x="refazer">Refazer do começo</button></div>`;
+    S.dueloIds = ids;
+  };
+  el.addEventListener("click", e => {
+    const b = e.target.closest("[data-x]"); if (!b || b.disabled) return;
+    const x = b.dataset.x;
+    if (x === "close") closeSheet(s);
+    else if (x === "campeao" || x === "desafiante" || x === "os-dois") { st = L.dueloEscolher(st, x); paint(); }
+    else if (x === "desfazer") { st = L.dueloDesfazer(st); paint(); }
+    else if (x === "refazer") { st = L.dueloIniciar(categoriasNoPool(pool)); paint(); }
+    else if (x === "sortear") sortearDe(S.dueloIds || []);
+    else if (x === "iou") openIssoOuAquilo(S.dueloIds || []);
+  });
+  paint();
+}
+
+/* Jogo 2 · Isso ou aquilo (máquina em logica.js: iouIniciar/iouEscolher/iouDesfazer/iouRanking/iouNovaRodada) */
+function openIssoOuAquilo(ids) {
+  let st = L.iouIniciar(ids);
+  const desempate = (a, b) => ((media(S.pratos[b] || {}) ?? -1) - (media(S.pratos[a] || {}) ?? -1)) || String((S.pratos[a] || {}).nome || "").localeCompare(String((S.pratos[b] || {}).nome || ""), "pt-BR");
+  const s = openSheet({ cls: "full", html: `<div class="vs" id="iou"></div>` });
+  const el = s.el;
+  const linha = (id, pos, direita) => { const p = S.pratos[id]; return p ? tlRow(Object.assign({ id }, p), lastTxt(p), direita, pos ? `<span class="rk-pos">${pos}</span>` : "") : ""; };
+  const vit = id => { const n = st.vitorias[id] || 0; return n ? `<span class="rk-badge">${plural(n, "vitória", "vitórias")}</span>` : ""; };
+  const paint = () => {
+    const box = $("#iou", el);
+    const topo = (prog, passo) => `<div class="qz-top"><button class="icon-btn" data-x="desfazer" aria-label="Desfazer" ${st.anterior ? "" : "disabled"}>${ic("undo", 21)}</button><div class="prog"><i style="width:${prog}%"></i></div><span class="step">${passo}</span><button class="icon-btn" data-x="close" aria-label="Fechar">${ic("close", 22)}</button></div>`;
+    if (st.fase === "jogando") {
+      const par = st.pares[st.i];
+      const passo = `${st.i + 1} de ${st.pares.length}`;
+      const prog = st.i / st.pares.length * 100;
+      if (par.length === 2) {
+        box.innerHTML = topo(prog, passo) + `<h2 class="vs-q">Isso ou aquilo?</h2>
+          <div class="vs-arena">${vsCardPrato(par[0], "cima")}<span class="vs-or" aria-hidden="true">ou</span>${vsCardPrato(par[1], "baixo")}</div>
+          <div class="vs-actions"><button class="btn btn-ghost btn-lg" data-x="os-dois">Nenhum agora: os dois pro final</button><p class="hint" style="text-align:center;margin:2px 0 0">Rodada ${st.rodada} · o que você não escolher sai da disputa.</p></div>`;
+      } else {
+        box.innerHTML = topo(prog, passo) + `<h2 class="vs-q">Esse ficou sem par</h2>
+          <div class="vs-arena">${vsCardPrato(par[0], null, true)}</div>
+          <div class="vs-actions"><div class="row2"><button class="btn btn-ghost" data-x="descarta">Descartar</button><button class="btn btn-red" data-x="fica">Fica no ranking</button></div></div>`;
+      }
+      return;
+    }
+    const r = L.iouRanking(st, desempate);
+    const vivos = r.ganharam.concat(r.final).filter(id => S.pratos[id]);
+    const k = vivos.length;
+    let corpo = `<h2>Ranking${st.rodada > 1 ? ` · rodada ${st.rodada}` : ""}</h2>`;
+    if (k === 1) {
+      const p = S.pratos[vivos[0]];
+      corpo += `<p class="muted">Sobrou um só. Decidido!</p><button class="winner" data-act="dish" data-id="${esc(vivos[0])}">${thumb(Object.assign({ id: vivos[0] }, p), "tl-thumb")}<span><small>Vencedor</small><b>${esc(p.nome)}</b></span></button>`;
+    } else if (!k) corpo += `<p class="muted">Todos foram descartados. Recomece com todos para tentar de novo.</p>`;
+    else corpo += `<p class="muted">${plural(k, "prato continua", "pratos continuam")} na disputa. Jogue de novo só com eles para refinar.</p>`;
+    if (r.ganharam.length) corpo += `<div class="rk-sec">Ganharam a disputa</div>` + r.ganharam.map((id, i) => linha(id, i + 1, vit(id))).join("");
+    if (r.final.length) corpo += `<div class="rk-sec">Foram pro final</div>` + r.final.map(id => linha(id, null, vit(id) || `<span class="rk-badge alt">sem escolha</span>`)).join("");
+    if (r.descartados.length) corpo += `<details class="rk-out"><summary class="rk-sec">Descartados (${r.descartados.length}) · ver</summary>${r.descartados.map(id => linha(id)).join("")}</details>`;
+    box.innerHTML = topo(100, `Rodada ${st.rodada}`) + `<div class="vs-scroll">${corpo}</div>
+      <div class="vs-actions">
+        <button class="btn btn-red btn-lg" data-x="rodada" ${k > 1 ? "" : "disabled"}>Jogar de novo só com estes (${k})</button>
+        <div class="row2"><button class="btn btn-ghost" data-x="todos">Recomeçar com todos (${st.todos.length})</button><button class="btn btn-ghost" data-x="sortear" ${k ? "" : "disabled"}>${ic("shuffle", 18)} Sortear</button></div>
+      </div>`;
+    S.iouVivos = vivos;
+  };
+  el.addEventListener("click", e => {
+    const b = e.target.closest("[data-x]"); if (!b || b.disabled) return;
+    const x = b.dataset.x;
+    if (x === "close") closeSheet(s);
+    else if (["cima", "baixo", "os-dois", "fica", "descarta"].includes(x)) { st = L.iouEscolher(st, x); paint(); }
+    else if (x === "desfazer") { st = L.iouDesfazer(st); paint(); }
+    else if (x === "rodada") { st = L.iouNovaRodada(st, "ranking"); paint(); }
+    else if (x === "todos") { st = L.iouNovaRodada(st, "todos"); paint(); }
+    else if (x === "sortear") sortearDe(S.iouVivos || []);
+  });
+  paint();
+}
+
 /* ---------- Histórico ---------- */
 function dayLabel(s) {
   const n = daysAgo(s);
@@ -1219,15 +1503,12 @@ function dayLabel(s) {
   const [y, m, d] = s.split("-").map(Number);
   return `${WD[new Date(y, m - 1, d).getDay()]}, ${fmtDate(s)}`;
 }
-function topbar(title) {
-  return `<div class="topbar"><button class="icon-btn" data-act="home" aria-label="Meus cardápios">${ic("chevL", 22)}</button><h1>${esc(title)}</h1><button class="icon-btn" data-act="refresh" aria-label="Atualizar">${ic("refresh", 20)}</button></div>`;
-}
 function tlRow(p, sub, right = "", left = "") {
-  return `<button class="tl-row" data-act="dish" data-id="${esc(p.id)}">${left}${thumb(p, "tl-thumb")}<span class="tl-txt"><b>${esc(p.nome)}</b><small>${esc(sub)}</small></span>${right}</button>`;
+  return `<button class="tl-row" data-act="dish" data-id="${esc(p.id)}">${left}${thumb(p, "tl-thumb")}<span class="tl-txt"><b>${esc(p.nome)}</b><small>${esc(sub || "")}</small></span>${right}</button>`;
 }
 function viewHist() {
   const ps = pratosArr();
-  if (!S.loaded.pratos) return topbar("Histórico") + `<div class="center-screen"><div class="loader"></div></div>`;
+  if (!temDados()) return topbar("Histórico") + `<div class="center-screen"><div class="loader"></div></div>`;
   const events = [];
   ps.forEach(p => feitosList(p).forEach(f => events.push(Object.assign({ p }, f))));
   events.sort((a, b) => b.d.localeCompare(a.d) || (b.ts - a.ts));
@@ -1262,6 +1543,13 @@ function viewHist() {
 }
 
 /* ---------- Configurações ---------- */
+function botoesPapel(m) {
+  return L.acoesSobre(myPapel(), m.papel, m.id === S.uid).map(acao => {
+    const a = L.ACOES_PAPEL[acao];
+    const forte = acao === "aprovar";
+    return `<button class="btn ${forte ? "btn-red" : "btn-ghost"} btn-sm" data-act="papel" data-acao="${acao}" data-mid="${esc(m.id)}">${acao === "tornar_dono" ? ic("crown", 16) + " " : ""}${esc(a.rotulo)}</button>`;
+  }).join("");
+}
 function viewConfig() {
   const c = S.card;
   if (!c) return topbar("Configurações") + `<div class="center-screen"><div class="loader"></div></div>`;
@@ -1275,32 +1563,28 @@ function viewConfig() {
   const cats = catsSorted();
   const countCat = id => ps.filter(p => (p.categorias || []).includes(id)).length;
   const comTudo = ps.filter(p => ATTRS.every(a => p.quiz && p.quiz[a.key])).length;
-  const memberBtns = m => {
-    if (!dono || m.id === S.uid) return "";
-    if (m.papel === "editor") return `<div class="cfg-btns"><button class="btn btn-ghost btn-sm" data-act="make-owner" data-mid="${esc(m.id)}">${ic("crown", 16)} Tornar dono</button><button class="btn btn-ghost btn-sm" data-act="rm-editor" data-mid="${esc(m.id)}">Tirar edição</button></div>`;
-    if (m.papel === "leitor") return `<div class="cfg-btns"><button class="btn btn-ghost btn-sm" data-act="rm-member" data-mid="${esc(m.id)}">Remover</button></div>`;
-    return "";
-  };
+  const bancoVelho = S.versaoBanco != null && S.versaoBanco < BANCO_VERSAO_MIN;
   return topbar("Configurações") + `
+  ${bancoVelho && canEdit() ? `<div class="banner banner-warn" style="margin-top:12px">${ic("db", 18)}<span class="grow"><b>Banco desatualizado (v${S.versaoBanco}).</b> Para usar “os dois” nos atributos, rode o supabase.sql da versão ${BANCO_VERSAO_MIN} no SQL Editor do Supabase.</span></div>` : ""}
   <section class="cfg-sec"><h2>Este cardápio</h2>
     <div class="cfg-row"><div class="grow"><small>Nome</small><b>${esc(c.nome)}</b></div>${dono ? `<button class="btn btn-ghost btn-sm" data-act="rename-card">Renomear</button>` : ""}</div>
     <div class="cfg-row"><div class="grow"><small>Código para entrar</small><b class="mono">${esc(S.cur)}</b></div><div class="cfg-btns"><button class="btn btn-ghost btn-sm" data-act="copy-code">${ic("copy", 16)} Copiar</button><button class="btn btn-red btn-sm" data-act="share-code">${ic("share", 16)} Compartilhar</button></div></div>
     <div class="cfg-row"><a class="wa-link" href="${esc(waHref(S.cur))}" target="_blank" rel="noopener">Enviar o código pelo WhatsApp</a></div>
   </section>
   ${dono && pend.length ? `<section class="cfg-sec"><h2>Pedidos para editar (${pend.length})</h2>
-    ${pend.map(m => `<div class="cfg-row"><div class="grow"><b>${esc(m.nome || "Alguém")}</b><small>quer cadastrar e avaliar pratos</small></div><div class="cfg-btns"><button class="btn btn-ghost btn-sm" data-act="refuse" data-mid="${esc(m.id)}">Recusar</button><button class="btn btn-red btn-sm" data-act="approve" data-mid="${esc(m.id)}">Aprovar</button></div></div>`).join("")}
+    ${pend.map(m => `<div class="cfg-row"><div class="grow"><b>${esc(m.nome || "Alguém")}</b><small>quer cadastrar e avaliar pratos</small></div><div class="cfg-btns">${botoesPapel(m)}</div></div>`).join("")}
   </section>` : ""}
   <section class="cfg-sec"><h2>Pessoas</h2>
-    ${membros.map(m => `<div class="cfg-row"><div class="grow"><b>${esc(m.nome || "Alguém")}${m.id === S.uid ? " (você)" : ""}</b></div><span class="role role-${esc(m.papel)}">${esc(ROLE_LABEL[m.papel] || "Leitor")}</span>${memberBtns(m)}</div>`).join("")}
+    ${membros.map(m => `<div class="cfg-row"><div class="grow"><b>${esc(m.nome || "Alguém")}${m.id === S.uid ? " (você)" : ""}</b></div><span class="role role-${esc(m.papel)}">${esc(ROLE_LABEL[m.papel] || "Leitor")}</span>${m.papel === "pendente" ? "" : `<div class="cfg-btns">${botoesPapel(m)}</div>`}</div>`).join("")}
     ${pap === "leitor" || pap === "visitante" ? `<div class="cfg-row"><div class="grow"><small>Você só pode ver este cardápio.</small></div><button class="btn btn-red btn-sm" data-act="request-edit">Pedir para editar</button></div>` : ""}
     ${pap === "pendente" ? `<div class="cfg-row"><div class="grow"><small>Seu pedido para editar está aguardando o dono.</small></div></div>` : ""}
     ${dono ? `<p class="hint" style="padding-bottom:6px">Dica: torne seu par dono também. Se um de vocês trocar de celular, o outro continua podendo aprovar pessoas.</p>` : ""}
   </section>
-  ${canEdit() ? `<section class="cfg-sec"><h2>Quiz</h2>
-    <div class="cfg-row"><div class="grow"><b>Classificar pratos para o quiz</b><small>${comTudo} de ${ps.length} pratos com as 4 respostas</small></div><button class="btn btn-red btn-sm" data-act="classify">Começar</button></div>
+  ${canEdit() ? `<section class="cfg-sec"><h2>Quiz e filtros</h2>
+    <div class="cfg-row"><div class="grow"><b>Classificar pratos para os filtros</b><small>${comTudo} de ${ps.length} pratos com as 4 respostas</small></div><button class="btn btn-red btn-sm" data-act="classify">Começar</button></div>
   </section>
   <section class="cfg-sec"><h2>Categorias</h2>
-    ${cats.map(ct => { const n = countCat(ct.id); return `<div class="cfg-row"><span class="cat-ic">${esc(ct.icone)}</span><div class="grow"><b>${esc(ct.nome)}</b><small>${n ? `${n} ${n === 1 ? "prato" : "pratos"}` : "sem pratos"}</small></div><div class="cfg-btns"><button class="btn btn-ghost btn-sm" data-act="cat-edit" data-cid="${esc(ct.id)}">Renomear</button>${n ? "" : `<button class="btn btn-danger btn-sm" data-act="cat-del" data-cid="${esc(ct.id)}" aria-label="Excluir ${esc(ct.nome)}">${ic("trash", 16)}</button>`}</div></div>`; }).join("")}
+    ${cats.map(ct => { const n = countCat(ct.id); return `<div class="cfg-row"><span class="cat-ic">${esc(ct.icone)}</span><div class="grow"><b>${esc(ct.nome)}</b><small>${n ? plural(n, "prato", "pratos") : "sem pratos"}</small></div><div class="cfg-btns"><button class="btn btn-ghost btn-sm" data-act="cat-edit" data-cid="${esc(ct.id)}">Renomear</button>${n ? "" : `<button class="btn btn-danger btn-sm" data-act="cat-del" data-cid="${esc(ct.id)}" aria-label="Excluir ${esc(ct.nome)}">${ic("trash", 16)}</button>`}</div></div>`; }).join("")}
     <div class="cfg-row"><button class="btn btn-soft" data-act="newcat">${ic("plus", 18)} Nova categoria</button></div>
     <p class="hint" style="padding-bottom:6px">Só dá para excluir categorias sem pratos.</p>
   </section>` : ""}
@@ -1308,8 +1592,9 @@ function viewConfig() {
     <div class="cfg-row"><div class="grow"><small>Seu nome</small><b>${esc(S.nome)}</b></div><button class="btn btn-ghost btn-sm" data-act="rename-me">Alterar</button></div>
     <button class="cfg-link" data-act="tutorial">${ic("phone", 22)}<span><b>Como instalar no celular</b><small>${isStandalone() ? "Você já está usando o app instalado" : "Passo a passo para colocar na tela de início"}</small></span>${ic("chevR", 18)}</button>
     <button class="cfg-link" data-act="home">${ic("chevL", 22)}<span><b>Trocar de cardápio</b><small>Voltar para Meus cardápios</small></span></button>
+    <button class="cfg-link danger" data-act="sair">${ic("logout", 22)}<span><b>Sair</b><small>Este celular deixa de acessar seus cardápios</small></span></button>
   </section>
-  <p class="foot-note">${APP_NAME} · os pratos ficam salvos na nuvem para todos que entram com o código.</p>`;
+  <p class="foot-note">${APP_NAME} ${APP_VERSAO} · banco v${S.versaoBanco || "?"} · atualização ${SYNCS[S.sync]}</p>`;
 }
 
 /* ============================== Ações globais ============================== */
@@ -1320,7 +1605,8 @@ document.addEventListener("submit", e => {
     if (!v) { $("#onbErr").textContent = "Digite seu nome para continuar."; return; }
     S.nome = v.slice(0, 30);
     LS.set("pd:nome", S.nome);
-    goHome();
+    const alvo = cardapioInicial();
+    if (alvo) openCardapio(alvo); else goHome();
   }
 });
 document.addEventListener("click", e => {
@@ -1331,39 +1617,41 @@ document.addEventListener("click", e => {
     case "reload": location.reload(); break;
     case "home": closeAllSheets(); goHome(); break;
     case "refresh": refreshNow(true); break;
-    case "retry": S.slow = false; refreshNow(true); scheduleRender(); break;
+    case "retry": refreshNow(true); break;
     case "tab": {
       if (S.tab === "cardapio") S.cardScroll = window.scrollY;
-      const changedTab = S.tab !== d.tab;
+      const mudou = S.tab !== d.tab;
       S.tab = d.tab;
       renderCardScreen(true);
-      window.scrollTo(0, S.tab === "cardapio" && changedTab ? S.cardScroll : 0);
-      if (changedTab) refreshNow(false);
+      window.scrollTo(0, S.tab === "cardapio" && mudou ? S.cardScroll : 0);
+      if (mudou) refreshNow(false);
       break;
     }
     case "tabcat": scrollToCat(d.cat); break;
     case "add": openForm(null); break;
-    case "quiz": openQuiz(); break;
     case "open": openCardapio(d.code); break;
     case "create": openCreate(); break;
     case "join": openJoin(); break;
     case "rename-me": renameMe(); break;
+    case "sair": sair(); break;
     case "tutorial": openTutorial(); break;
     case "dish": openDetail(d.id); break;
     case "newcat": newCategoryFlow(); break;
     case "goto-config": S.tab = "config"; renderCardScreen(true); window.scrollTo(0, 0); break;
     case "request-edit": requestEdit(); break;
-    case "approve": setRole(d.mid, "editor", "Aprovado! Agora essa pessoa pode cadastrar e avaliar."); break;
-    case "refuse": setRole(d.mid, "leitor", "Pedido recusado."); break;
-    case "rm-editor": removeEditor(d.mid); break;
-    case "rm-member": removeMember(d.mid); break;
-    case "make-owner": makeOwner(d.mid); break;
+    case "papel": acaoPapel(d.acao, d.mid); break;
     case "rename-card": renameCard(); break;
     case "copy-code": copyText(S.cur, `Código ${S.cur} copiado`); break;
     case "share-code": shareCode(S.cur); break;
     case "cat-edit": editCategory(d.cid); break;
     case "cat-del": deleteCategory(d.cid); break;
     case "classify": openClassify(); break;
+    case "filt": setFiltro(d.k, d.v); break;
+    case "filt-mais": S.filtrosAbertos = !S.filtrosAbertos; renderCardScreen(false); break;
+    case "filt-limpar": S.filtros = Object.assign({}, L.FILTROS_VAZIOS); LS.set("pd:filtros", JSON.stringify(S.filtros)); renderCardScreen(false); break;
+    case "jogo-categorias": openDueloCategorias(); break;
+    case "jogo-iou": openIssoOuAquilo(poolAtual().map(x => x.prato.id)); break;
+    case "sortear": sortearDe(poolAtual().map(x => x.prato.id)); break;
     case "hist-range": S.histRange = d.v; renderCardScreen(false); break;
     case "hist-more": S.histLimit += 30; renderCardScreen(false); break;
     case "rate": ratePrato(d.id, Number(d.n)); break;
@@ -1375,7 +1663,7 @@ document.addEventListener("click", e => {
   }
 });
 
-/* ---------- Entrar / criar ---------- */
+/* ---------- Entrar / criar / sair ---------- */
 function codeBoxes(code) { return `<div class="code-big" aria-label="Código ${esc(code)}">${code.split("").map(ch => `<span>${esc(ch)}</span>`).join("")}</div>`; }
 function openJoin() {
   const s = openSheet({ html: `
@@ -1466,8 +1754,19 @@ async function renameMe() {
   toast("Nome atualizado");
   if (S.screen === "home") render(); else changed();
 }
+/* Sair: apaga a sessão e os dados deste aparelho. Não dá para voltar a ser a mesma pessoa (não há login). */
+async function sair() {
+  const donoDe = Object.values(S.meus).filter(m => m.papel === "dono").length;
+  const aviso = donoDe ? ` Você é dono de ${donoDe === 1 ? "um cardápio" : donoDe + " cardápios"}: antes de sair, torne seu par dono também (Configurações → Pessoas), senão ninguém mais aprova pedidos.` : "";
+  const ok = await confirmDlg({ title: `Sair do ${APP_NAME}?`, text: "Este celular perde o acesso aos seus cardápios. Para voltar, entre de novo com o código e peça para editar." + aviso, ok: "Sair", danger: true });
+  if (!ok) return;
+  unsubscribe();
+  try { await sb.auth.signOut({ scope: "local" }); } catch (e) {}
+  ["pd:nome", "pd:meus", "pd:ultimo", "pd:filtros", "pd-auth"].forEach(k => LS.del(k));
+  location.reload();
+}
 
-/* ---------- Papéis ---------- */
+/* ---------- Papéis (transições em logica.js → ACOES_PAPEL, espelhadas no banco) ---------- */
 async function requestEdit() {
   if (!S.cur) return;
   const ok = await act(() => q(sb.rpc("pedir_edicao", { p_codigo: S.cur })));
@@ -1478,27 +1777,25 @@ async function requestEdit() {
     toast("Pedido enviado! Agora é só o dono aprovar.");
   }
 }
-async function setRole(mid, papel, msg) {
-  if (!isDono()) return;
-  const ok = await act(() => q(sb.rpc("definir_papel", { p_codigo: S.cur, p_user: mid, p_papel: papel })));
+const TEXTO_ACAO = {
+  aprovar:      { ok: "Aprovado! Agora essa pessoa pode cadastrar e avaliar." },
+  recusar:      { ok: "Pedido recusado." },
+  tornar_dono:  { ok: n => `${n} agora também é dono.`, confirma: n => ({ title: `Tornar ${n} dono também?`, text: "A pessoa poderá aprovar pedidos, renomear o cardápio e remover pessoas, como você. Depois não dá para desfazer.", ok: "Tornar dono" }) },
+  tirar_edicao: { ok: "Edição removida.", confirma: n => ({ title: `Tirar a edição de ${n}?`, text: "A pessoa continua vendo o cardápio, mas não cadastra, não edita e não avalia mais.", ok: "Tirar edição", danger: true }) },
+  remover:      { ok: "Pessoa removida.", confirma: n => ({ title: `Remover ${n} do cardápio?`, text: "Para voltar, a pessoa vai precisar entrar de novo com o código.", ok: "Remover", danger: true }) }
+};
+async function acaoPapel(acao, mid) {
+  const a = L.ACOES_PAPEL[acao], tx = TEXTO_ACAO[acao];
+  if (!a || !isDono()) return;
+  const nome = memberName(mid);
+  if (tx.confirma && !(await confirmDlg(tx.confirma(nome)))) return;
+  const ok = await act(() => q(sb.rpc("definir_papel", { p_codigo: S.cur, p_user: mid, p_papel: a.para })));
   if (!ok) return;
   const k = S.cur + "|" + mid;
-  if (papel === "remover") T.membros.delete(k);
-  else { const m = T.membros.get(k); if (m) T.membros.set(k, Object.assign({}, m, { papel })); }
+  if (a.para === "remover") T.membros.delete(k);
+  else { const m = T.membros.get(k); if (m) T.membros.set(k, Object.assign({}, m, { papel: a.para })); }
   changed();
-  toast(msg);
-}
-async function removeEditor(mid) {
-  const ok = await confirmDlg({ title: `Tirar a edição de ${memberName(mid)}?`, text: "A pessoa continua vendo o cardápio, mas não cadastra, não edita e não avalia mais.", ok: "Tirar edição", danger: true });
-  if (ok) setRole(mid, "leitor", "Edição removida.");
-}
-async function removeMember(mid) {
-  const ok = await confirmDlg({ title: `Remover ${memberName(mid)} do cardápio?`, text: "Para voltar, a pessoa vai precisar entrar de novo com o código.", ok: "Remover", danger: true });
-  if (ok) setRole(mid, "remover", "Pessoa removida.");
-}
-async function makeOwner(mid) {
-  const ok = await confirmDlg({ title: `Tornar ${memberName(mid)} dono também?`, text: "A pessoa poderá aprovar pedidos, renomear o cardápio e remover pessoas, como você.", ok: "Tornar dono" });
-  if (ok) setRole(mid, "dono", `${memberName(mid)} agora também é dono.`);
+  toast(typeof tx.ok === "function" ? tx.ok(nome) : tx.ok);
 }
 async function renameCard() {
   const r = await textSheet({ title: "Renomear cardápio", label: "Nome do cardápio", value: S.card.nome, max: 40 });
@@ -1588,7 +1885,7 @@ function renderDetail() {
   const sumNotas = notas.length
     ? notas.sort((a, b) => (a[0] === S.uid ? -1 : b[0] === S.uid ? 1 : 0)).map(([u, v]) => `${esc(memberName(u))} ${v} ★`).join(" · ") + ` → <b>média ${fmt1(avg)}</b>`
     : "Sem avaliação";
-  const doneSum = fs.length ? `${casa ? "Feito" : "Pedido"} ${fs.length} ${fs.length === 1 ? "vez" : "vezes"} · última vez em ${fmtDate(fs[0].d)}` : (casa ? "Ainda não registrado como feito." : "Ainda não registrado como pedido.");
+  const doneSum = fs.length ? `${casa ? "Feito" : "Pedido"} ${plural(fs.length, "vez", "vezes")} · última vez em ${fmtDate(fs[0].d)}` : (casa ? "Ainda não registrado como feito." : "Ainda não registrado como pedido.");
   box.innerHTML = `<div class="det-scroll">
     <div class="det-photo">${validFoto(p.foto) ? `<img src="${p.foto}" alt="Foto de ${esc(p.nome)}">` : `<span class="ph" aria-hidden="true">${esc(catIcon(p))}</span>`}
       <button class="det-close" data-act="close-sheet" aria-label="Fechar">${ic("chevD", 22)}</button></div>
@@ -1596,10 +1893,10 @@ function renderDetail() {
       <h2 class="det-name">${esc(p.nome)}</h2>
       <div>${casa ? `<span class="orig-home">Feito em casa</span>` : `<span class="orig-rest" style="font-size:15px">${ic("store", 16)} Pedido ${p.restaurante ? "do " + esc(p.restaurante) : "de restaurante"}</span>`}</div>
       ${catChips ? `<div class="chips">${catChips}</div>` : ""}
-      ${quizChips ? `<div class="chips">${quizChips}</div>` : (ed ? `<p class="hint">Sem respostas do quiz ainda. Edite o prato para ajudar nas sugestões.</p>` : "")}
+      ${quizChips ? `<div class="chips">${quizChips}</div>` : (ed ? `<p class="hint">Sem tempo, peso, sabor e ocasião ainda. Edite o prato para ajudar nos filtros.</p>` : "")}
       <div class="det-block">
         <h3>Avaliação</h3>
-        ${ed ? `<div class="rate-row"><span>Sua nota</span><div class="rate" role="group" aria-label="Sua nota">${[1, 2, 3, 4, 5].map(n => `<button class="rstar ${n <= my ? "on" : ""}" data-act="rate" data-id="${esc(p.id)}" data-n="${n}" aria-label="${n} ${n === 1 ? "estrela" : "estrelas"}" aria-pressed="${n === my}">${ic("star", 30)}</button>`).join("")}</div></div>`
+        ${ed ? `<div class="rate-row"><span>Sua nota</span><div class="rate" role="group" aria-label="Sua nota">${[1, 2, 3, 4, 5].map(n => `<button class="rstar ${n <= my ? "on" : ""}" data-act="rate" data-id="${esc(p.id)}" data-n="${n}" aria-label="${plural(n, "estrela", "estrelas")}" aria-pressed="${n === my}">${ic("star", 30)}</button>`).join("")}</div></div>`
         : (avg != null ? `<div>${starsHTML(avg, 22)}</div>` : "")}
         <p class="rate-sum">${sumNotas}</p>
       </div>
@@ -1654,7 +1951,7 @@ async function deletePrato(id) {
   }
 }
 
-/* ---------- Gravação de prato (usada no cadastro, na edição e na importação) ---------- */
+/* ---------- Gravação de prato (cadastro, edição e importação) ---------- */
 async function salvarFoto(pid, code, foto) {
   const row = await q(sb.from("fotos").upsert({ prato_id: pid, cardapio: code, data: foto, atualizado_em: nowISO() }).select("prato_id,cardapio,atualizado_em").single());
   if (code === S.cur) put("fotos", Object.assign({}, row, { data: foto }));
@@ -1664,6 +1961,7 @@ async function salvarNota(pid, code, nota) {
   else { await q(sb.from("notas").delete().eq("prato_id", pid).eq("user_id", S.uid)); if (code === S.cur) T.notas.delete(pid + "|" + S.uid); }
 }
 async function setQuizAttr(id, attr, val) {
+  if (val != null && !L.VALORES_VALIDOS[attr].includes(val)) throw new Error("Valor inválido para " + attr);
   const rows = await q(sb.from("pratos").update({ [attr]: val, atualizado_em: nowISO() }).eq("id", id).select());
   if (rows.length) { put("pratos", rows[0]); changed(); return true; }
   return false;
@@ -1688,6 +1986,12 @@ function resizeImage(file) {
     img.src = url;
   });
 }
+/* Três botões por atributo: A · Os dois · B (tocar de novo desmarca). */
+function attrSeg(a, x) {
+  const semAmbos = !bancoAceitaAmbos();
+  const op = (v, rot, dis) => `<button type="button" class="seg-b" data-x="${x}" data-attr="${a.key}" data-v="${v}" ${dis ? "disabled" : ""}>${esc(rot)}</button>`;
+  return `<div class="seg seg-sm seg-3">${op(a.a[0], a.a[1])}${op(L.AMBOS, a.ambos[1], semAmbos)}${op(a.b[0], a.b[1])}</div>`;
+}
 function openForm(id, preCat) {
   if (!canEdit()) return;
   const p = id ? S.pratos[id] : null;
@@ -1708,8 +2012,9 @@ function openForm(id, preCat) {
       <div class="fld"><span class="lbl">Categorias <small>uma ou mais</small></span><div class="chips" id="fCats"></div><p class="err" id="eCats"></p></div>
       <div class="fld"><span class="lbl">Foto <small>opcional</small></span><div id="fFoto"></div></div>
       <div class="fld"><span class="lbl">Sua nota <small>opcional</small></span><div class="rate rate-lg" id="fNota" role="group" aria-label="Sua nota"></div></div>
-      <div class="fld"><button type="button" class="collapse" data-x="quizToggle" aria-expanded="${quizOpen}" aria-controls="fQuiz">${ic("sparkle", 18)}<span>Ajudar o quiz<small>opcional</small></span>${ic("chevD", 18)}</button>
-        <div id="fQuiz" class="quiz-attrs" ${quizOpen ? "" : "hidden"}>${ATTRS.map(a => `<div><span class="qa-q">${esc(a.q)}</span><div class="seg seg-sm">${[a.a, a.b].map(o => `<button type="button" class="seg-b" data-x="qa" data-attr="${a.key}" data-v="${o[0]}">${esc(o[1])}</button>`).join("")}</div></div>`).join("")}<p class="hint">Toque de novo para desmarcar. Tudo aqui é opcional.</p></div>
+      <div class="fld"><button type="button" class="collapse" data-x="quizToggle" aria-expanded="${quizOpen}" aria-controls="fQuiz">${ic("sparkle", 18)}<span>Ajudar nos filtros<small>opcional</small></span>${ic("chevD", 18)}</button>
+        <div id="fQuiz" class="quiz-attrs" ${quizOpen ? "" : "hidden"}>${ATTRS.map(a => `<div><span class="qa-q">${esc(a.q)}</span>${attrSeg(a, "qa")}</div>`).join("")}
+          <p class="hint">“Os dois” serve para pratos no meio-termo: aparecem nos dois filtros. Toque de novo para desmarcar.${bancoAceitaAmbos() ? "" : " Para liberar “os dois”, o banco precisa ser atualizado (Configurações)."}</p></div>
       </div>
     </div>
     <div class="sheet-foot"><button class="btn btn-red btn-lg" data-x="save">${id ? "Salvar alterações" : "Salvar prato"}</button></div>` });
@@ -1755,7 +2060,7 @@ function openForm(id, preCat) {
       paintFoto(false);
     }));
   };
-  const paintNota = () => { $("#fNota", el).innerHTML = [1, 2, 3, 4, 5].map(n => `<button type="button" class="rstar ${F.nota && n <= F.nota ? "on" : ""}" data-x="nota" data-n="${n}" aria-label="${n} ${n === 1 ? "estrela" : "estrelas"}" aria-pressed="${n === F.nota}">${ic("star", 32)}</button>`).join(""); };
+  const paintNota = () => { $("#fNota", el).innerHTML = [1, 2, 3, 4, 5].map(n => `<button type="button" class="rstar ${F.nota && n <= F.nota ? "on" : ""}" data-x="nota" data-n="${n}" aria-label="${plural(n, "estrela", "estrelas")}" aria-pressed="${n === F.nota}">${ic("star", 32)}</button>`).join(""); };
   const paintQuiz = () => { $$('[data-x="qa"]', el).forEach(b => b.setAttribute("aria-pressed", String(F.quiz[b.dataset.attr] === b.dataset.v))); };
   paintOrig(); paintCats(); paintFoto(false); paintNota(); paintQuiz();
   if (F.origem === "restaurante") paintSugs();
@@ -1817,7 +2122,7 @@ function openForm(id, preCat) {
     else { btn.disabled = false; btn.textContent = F.id ? "Salvar alterações" : "Salvar prato"; }
   };
   el.addEventListener("click", e => {
-    const b = e.target.closest("[data-x]"); if (!b) return;
+    const b = e.target.closest("[data-x]"); if (!b || b.disabled) return;
     const x = b.dataset.x;
     if (x === "close") closeSheet(s);
     else if (x === "orig") { F.origem = b.dataset.v; paintOrig(); $("#eOrig", el).textContent = ""; if (F.origem === "restaurante") { paintSugs(); setTimeout(() => $("#fRest", el).focus(), 50); } }
@@ -1844,14 +2149,14 @@ async function openImport(id) {
   const body = $("#impBody", s.el);
   await refreshMeus();
   if (!sheetStack.includes(s)) return;
-  const rows = Object.entries(S.meus).filter(([c, m]) => c !== srcCode && (m.papel === "dono" || m.papel === "editor"))
+  const rows = Object.entries(S.meus).filter(([c, m]) => c !== srcCode && L.podeEditar(m.papel))
     .map(([c, m]) => ({ c, nome: m.nome || c, pap: m.papel })).sort((a, b) => a.nome.localeCompare(b.nome, "pt-BR"));
   if (!rows.length) {
     body.innerHTML = `<div class="empty" style="padding:16px 8px"><div class="empty-art">📥</div><h3>Nenhum cardápio seu</h3><p>Você ainda não é dono nem editor de outro cardápio. Crie o seu e volte aqui para importar.</p><button class="btn btn-red" data-x="mk">Criar meu cardápio</button></div>`;
     $('[data-x="mk"]', body).onclick = () => { closeAllSheets(); goHome(); setTimeout(openCreate, 120); };
     return;
   }
-  body.innerHTML = `<p class="muted" style="margin-bottom:8px">Vai junto: nome, origem, restaurante, categorias, foto e respostas do quiz. Notas e histórico ficam.</p>` +
+  body.innerHTML = `<p class="muted" style="margin-bottom:8px">Vai junto: nome, origem, restaurante, categorias, foto e respostas dos filtros. Notas e histórico ficam.</p>` +
     rows.map(r => `<button class="myitem" data-x="to" data-code="${esc(r.c)}"><span class="my-logo">${esc((r.nome || "?").charAt(0).toUpperCase())}</span><span class="my-info"><b>${esc(r.nome)}</b><small>${esc(r.c)}</small></span><span class="role role-${esc(r.pap)}">${esc(ROLE_LABEL[r.pap])}</span></button>`).join("");
   body.addEventListener("click", async e => {
     const b = e.target.closest('[data-x="to"]'); if (!b || b.disabled) return;
@@ -1884,110 +2189,14 @@ async function doImport(p, srcCats, dest) {
   } catch (e) { console.warn(e); toast(errMsg(e)); return false; }
 }
 
-/* ---------- Quiz ---------- */
-function quizRank(ans) {
-  let list = pratosArr();
-  if (ans.origem) list = list.filter(p => (p.origem === "restaurante" ? "restaurante" : "casa") === ans.origem);
-  const out = [];
-  for (const p of list) {
-    let score = 0, elim = false;
-    for (const a of ATTRS) {
-      const want = ans[a.key]; if (!want) continue;
-      const has = p.quiz && p.quiz[a.key];
-      if (!has) { score += 1; continue; }
-      if (has === want) score += 3; else { elim = true; break; }
-    }
-    if (!elim) out.push({ p, score });
-  }
-  const since = p => { const l = ultima(p); return l ? daysAgo(l) : 100000; };
-  out.sort((x, y) => (y.score - x.score) || ((media(y.p) ?? -1) - (media(x.p) ?? -1)) || (since(y.p) - since(x.p)) || byName(x.p, y.p));
-  return out.map(x => x.p);
-}
-function openQuiz() {
-  const Q = { step: 0, ans: {}, res: null, page: 0 };
-  const s = openSheet({ cls: "full", html: `<div class="qz" id="qz"></div>`, onClose: () => { S.quiz = null; } });
-  S.quiz = { Q, s };
-  const el = s.el;
-  const paint = () => {
-    const box = $("#qz", el);
-    if (!Q.res) {
-      const st = QUIZ_STEPS[Q.step];
-      box.innerHTML = `<div class="qz-top"><button class="icon-btn" data-x="back" aria-label="Voltar" ${Q.step === 0 ? "disabled" : ""}>${ic("chevL", 22)}</button><div class="prog" role="progressbar" aria-valuemin="0" aria-valuemax="5" aria-valuenow="${Q.step}"><i style="width:${Q.step / QUIZ_STEPS.length * 100}%"></i></div><button class="icon-btn" data-x="close" aria-label="Fechar">${ic("close", 22)}</button></div>
-        <div class="qz-main"><div><p class="qz-step">Pergunta ${Q.step + 1} de ${QUIZ_STEPS.length}</p><h2 class="qz-q">${esc(st.q)}</h2></div>
-        <div class="qz-opts">
-          <button class="qopt" data-x="ans" data-v="${st.a[0]}"><span class="qe" aria-hidden="true">${st.a[2]}</span>${esc(st.a[1])}</button>
-          <button class="qopt" data-x="ans" data-v="${st.b[0]}"><span class="qe" aria-hidden="true">${st.b[2]}</span>${esc(st.b[1])}</button>
-          <button class="qskip" data-x="ans" data-v="">Tanto faz</button>
-        </div></div>`;
-      return;
-    }
-    const all = pratosArr();
-    const total = all.length;
-    const withAttrs = all.filter(hasQuiz).length;
-    const few = total > 0 && withAttrs < total / 2;
-    const per = 5;
-    const pages = Math.max(1, Math.ceil(Q.res.length / per));
-    const shown = Q.res.slice(Q.page * per, Q.page * per + per);
-    const tip = few ? `<div class="banner banner-info">${ic("sparkle", 18)}<span class="grow">Só ${withAttrs} de ${total} pratos têm respostas do quiz, então as sugestões ainda são aproximadas.</span>${canEdit() ? `<button class="btn btn-sm btn-red" data-x="classify">Classificar</button>` : ""}</div>` : "";
-    let mid;
-    if (!total) mid = `<div class="empty"><div class="empty-art">🍳</div><h3>Ainda não há pratos</h3><p>Cadastrem alguns pratos e o quiz passa a sugerir.</p></div>`;
-    else if (!Q.res.length) mid = `<h2>Nada combina com tudo</h2><p class="muted">Nenhum prato bate com todas as respostas. Tente responder “Tanto faz” em alguma pergunta.</p>${tip}`;
-    else mid = `<h2>Que tal um desses?</h2><p class="muted">${Q.res.length} ${Q.res.length === 1 ? "prato combina" : "pratos combinam"} com o que vocês responderam${pages > 1 ? ` · página ${Q.page + 1} de ${pages}` : ""}.</p>${tip}<div class="sug-list" id="sugList">${shown.map(dishCard).join("")}</div>`;
-    box.innerHTML = `<div class="qz-top"><button class="icon-btn" data-x="redo" aria-label="Refazer">${ic("undo", 21)}</button><div class="prog"><i style="width:100%"></i></div><button class="icon-btn" data-x="close" aria-label="Fechar">${ic("close", 22)}</button></div>
-      <div class="qz-res">${mid}</div>
-      <div class="qz-actions">
-        ${Q.res.length ? `<button class="btn btn-ghost" data-x="more" ${Q.res.length <= per ? "disabled" : ""}>Ver outras</button><button class="btn btn-red" data-x="raffle">${ic("shuffle", 18)} Sortear entre elas</button>` : ""}
-        <button class="btn btn-text wide" data-x="redo">Refazer o quiz</button>
-      </div>`;
-  };
-  const raffle = async () => {
-    const cards = $$("#sugList .dish", el);
-    if (!cards.length) return;
-    const win = Math.floor(Math.random() * cards.length);
-    $$('[data-x="raffle"],[data-x="more"]', el).forEach(b => { b.disabled = true; });
-    if (!reduceMotion()) {
-      const spins = cards.length * 2 + win;
-      for (let i = 0; i <= spins; i++) {
-        cards.forEach((c, k) => c.classList.toggle("hl", k === i % cards.length));
-        await sleep(60 + i * i * 1.2);
-      }
-    }
-    cards.forEach((c, k) => { c.classList.remove("hl"); c.classList.toggle("picked", k === win); });
-    toast("Sorteado! Bom apetite.");
-    await sleep(reduceMotion() ? 100 : 650);
-    if (S.quiz && S.quiz.s === s) { openDetail(cards[win].dataset.id); $$('[data-x="raffle"],[data-x="more"]', el).forEach(b => { b.disabled = false; }); }
-  };
-  el.addEventListener("click", e => {
-    const b = e.target.closest("[data-x]"); if (!b || b.disabled) return;
-    const x = b.dataset.x;
-    if (x === "close") closeSheet(s);
-    else if (x === "back") { if (Q.step > 0) { Q.step--; paint(); } }
-    else if (x === "ans") {
-      Q.ans[QUIZ_STEPS[Q.step].key] = b.dataset.v || null;
-      if (Q.step < QUIZ_STEPS.length - 1) Q.step++;
-      else { Q.res = quizRank(Q.ans); Q.page = 0; }
-      paint();
-    }
-    else if (x === "redo") { Q.step = 0; Q.ans = {}; Q.res = null; Q.page = 0; paint(); }
-    else if (x === "more") {
-      const pages = Math.ceil(Q.res.length / 5);
-      Q.page = (Q.page + 1) % pages;
-      if (Q.page === 0) toast("Essas eram todas. Voltando ao começo.");
-      paint();
-      const r = $(".qz-res", el); if (r) r.scrollTop = 0;
-    }
-    else if (x === "raffle") raffle();
-    else if (x === "classify") openClassify();
-  });
-  paint();
-}
-
-/* ---------- Classificação rápida (arrastar estilo Tinder) ---------- */
+/* ---------- Classificação rápida (arrastar estilo Tinder) ----------
+ * Fases: "pergunta" (escolher qual atributo) → "classificando" → "fim".
+ * Esquerda = 1ª opção, direita = 2ª, botão do meio = os dois. Cada gesto grava na hora; "Desfazer último" restaura o valor anterior. */
 let swQ = Promise.resolve();
 const enqueue = fn => (swQ = swQ.then(fn).catch(e => console.warn(e)));
 function openClassify() {
   if (!canEdit()) return;
-  const C = { attr: null, all: false, queue: [], i: 0, undo: [], busy: false };
+  const C = { fase: "pergunta", attr: null, all: false, queue: [], i: 0, undo: [], busy: false };
   const s = openSheet({ cls: "full", html: `<div class="sw" id="sw"></div>`, onClose: () => { S.cls = null; } });
   S.cls = C;
   const el = s.el;
@@ -1996,11 +2205,16 @@ function openClassify() {
     try { if (!(await setQuizAttr(id, attr, val))) toast("Esse prato foi excluído ou você não pode editá-lo."); }
     catch (e) { toast(errMsg(e)); }
   });
+  const paint = enter => {
+    C.fase = C.attr == null ? "pergunta" : (C.i >= C.queue.length ? "fim" : "classificando");
+    if (C.fase === "pergunta") return paintPick();
+    return paintRun(enter);
+  };
   const paintPick = () => {
     const ps = pratosArr();
     $("#sw", el).innerHTML = `<div class="sw-top"><span style="width:44px"></span><div class="sw-q">Classificar pratos</div><button class="icon-btn" data-x="close" aria-label="Fechar">${ic("close", 22)}</button></div>
-      <div class="sw-pick"><p>Escolha uma pergunta. Depois é só arrastar cada prato para o lado da resposta.</p>
-      ${ATTRS.map(a => { const falta = ps.filter(p => !(p.quiz && p.quiz[a.key])).length; return `<button class="pick-q" data-x="start" data-attr="${a.key}"><span><b>${esc(a.q)}</b><small>${falta ? `${falta} ${falta === 1 ? "prato sem resposta" : "pratos sem resposta"}` : "todos respondidos"}</small></span>${ic("chevR", 20)}</button>`; }).join("")}
+      <div class="sw-pick"><p>Escolha uma pergunta. Depois é só arrastar cada prato para o lado da resposta, ou tocar em “Os dois”.</p>
+      ${ATTRS.map(a => { const falta = ps.filter(p => !(p.quiz && p.quiz[a.key])).length; return `<button class="pick-q" data-x="start" data-attr="${a.key}"><span><b>${esc(a.q)}</b><small>${falta ? plural(falta, "prato sem resposta", "pratos sem resposta") : "todos respondidos"}</small></span>${ic("chevR", 20)}</button>`; }).join("")}
       <label class="toggle"><input type="checkbox" id="swAll" ${C.all ? "checked" : ""}> Revisar todos (inclui os já respondidos)</label>
       ${ps.length ? "" : `<p class="muted">Cadastre alguns pratos primeiro.</p>`}</div>`;
     $("#swAll", el).addEventListener("change", ev => { C.all = ev.target.checked; });
@@ -2008,7 +2222,7 @@ function openClassify() {
   const start = attr => {
     C.attr = attr; C.i = 0; C.undo = [];
     C.queue = pratosArr().filter(p => C.all || !(p.quiz && p.quiz[attr])).sort(byName).map(p => p.id);
-    paintRun();
+    paint();
   };
   const cardHTML = (id, cls) => {
     const p0 = S.pratos[id];
@@ -2024,7 +2238,7 @@ function openClassify() {
   const paintRun = enter => {
     const a = A(); const n = C.queue.length;
     const top = `<div class="sw-top"><button class="icon-btn" data-x="pick" aria-label="Outra pergunta">${ic("chevL", 22)}</button><div class="sw-q">${esc(a.q)}</div><button class="icon-btn" data-x="close" aria-label="Fechar">${ic("close", 22)}</button></div>`;
-    if (C.i >= n) {
+    if (C.fase === "fim") {
       $("#sw", el).innerHTML = top + `<div class="sw-prog"><span>${n} de ${n}</span><div class="prog"><i style="width:100%"></i></div></div>
         <div class="empty" style="flex:1;justify-content:center"><div class="empty-art">🎉</div><h3>${n ? "Pronto!" : "Nada para classificar"}</h3><p>${n ? `Todos os pratos da lista têm resposta para “${esc(a.q)}”.` : `Todos os pratos já têm resposta para essa pergunta. Marque “Revisar todos” para mudar alguma.`}</p>
         <button class="btn btn-red" data-x="pick">Escolher outra pergunta</button><button class="btn btn-text" data-x="close">Voltar</button></div>
@@ -2034,13 +2248,13 @@ function openClassify() {
     $("#sw", el).innerHTML = top + `<div class="sw-prog"><span>${C.i + 1} de ${n}</span><div class="prog"><i style="width:${C.i / n * 100}%"></i></div></div>
       <div class="sw-stage"><div class="sw-side l" id="sideA">← ${esc(a.a[1])}</div><div class="sw-side r" id="sideB">${esc(a.b[1])} →</div>
         <div class="sw-stack">${C.i + 1 < n ? cardHTML(C.queue[C.i + 1], "back") : ""}${cardHTML(C.queue[C.i], "front")}</div></div>
-      <div class="sw-btns"><button class="btn btn-a" data-x="A">${esc(a.a[1])}</button><button class="btn btn-ghost" data-x="skip">Pular</button><button class="btn btn-b" data-x="B">${esc(a.b[1])}</button></div>
-      <div class="sw-sub"><button class="btn btn-text" data-x="undo" ${C.undo.length ? "" : "disabled"}>${ic("undo", 18)} Desfazer último</button><span class="hint" style="margin:0">Arraste o card ou use os botões</span></div>`;
+      <div class="sw-btns"><button class="btn btn-a" data-x="A">${esc(a.a[1])}</button><button class="btn btn-ab" data-x="AB" ${bancoAceitaAmbos() ? "" : "disabled"}>${esc(a.ambos[1])}</button><button class="btn btn-b" data-x="B">${esc(a.b[1])}</button></div>
+      <div class="sw-sub"><button class="btn btn-text" data-x="undo" ${C.undo.length ? "" : "disabled"}>${ic("undo", 18)} Desfazer último</button><button class="btn btn-text" data-x="skip" style="color:var(--muted)">Pular</button></div>`;
     const card = $(".sw-card.front", el);
     if (enter && !reduceMotion()) {
       card.style.transition = "none";
       card.style.transform = enter === "a" ? "translateX(-130%) rotate(-18deg)" : enter === "b" ? "translateX(130%) rotate(18deg)" : "translateY(-40%)";
-      card.style.opacity = enter === "skip" ? "0" : "1";
+      card.style.opacity = enter === "a" || enter === "b" ? "1" : "0";
       requestAnimationFrame(() => requestAnimationFrame(() => { card.style.transition = "transform .25s ease-out, opacity .25s"; card.style.transform = ""; card.style.opacity = "1"; }));
     }
     bindDrag(card);
@@ -2077,14 +2291,15 @@ function openClassify() {
     card.addEventListener("pointercancel", end);
     card.addEventListener("lostpointercapture", end);
   };
+  /* choice: "a" | "b" | "ab" (os dois) | "skip" */
   const commit = async choice => {
-    if (C.busy || C.i >= C.queue.length) return;
+    if (C.busy || C.fase !== "classificando") return;
     C.busy = true;
     const a = A(); const id = C.queue[C.i];
     const card = $(".sw-card.front", el);
     if (choice === "skip") C.undo.push({ id, kind: "skip" });
     else {
-      const val = choice === "a" ? a.a[0] : a.b[0];
+      const val = choice === "a" ? a.a[0] : choice === "b" ? a.b[0] : L.AMBOS;
       const prev = (S.pratos[id] && S.pratos[id].quiz && S.pratos[id].quiz[a.key]) || null;
       C.undo.push({ id, kind: "set", prev, side: choice });
       if (S.pratos[id]) saveAttr(id, a.key, val);
@@ -2092,34 +2307,38 @@ function openClassify() {
     if (card && !reduceMotion()) {
       card.style.transition = "transform .24s ease-in, opacity .24s";
       card.style.transform = choice === "a" ? "translateX(-140%) rotate(-22deg)" : choice === "b" ? "translateX(140%) rotate(22deg)" : "translateY(-40%) scale(.9)";
-      if (choice === "skip") card.style.opacity = "0";
+      if (choice === "skip" || choice === "ab") card.style.opacity = "0";
       tint(card, choice === "a" ? -200 : choice === "b" ? 200 : 0);
       await sleep(230);
     }
     C.i++; C.busy = false;
-    paintRun();
+    paint();
   };
   const undo = () => {
     if (C.busy) return;
     const u = C.undo.pop(); if (!u) return;
     if (u.kind === "set" && S.pratos[u.id]) saveAttr(u.id, C.attr, u.prev);
     C.i = Math.max(0, C.i - 1);
-    paintRun(u.kind === "set" ? u.side : "skip");
+    paint(u.kind === "set" ? u.side : "skip");
     toast("Voltei o último prato");
   };
   el.addEventListener("click", e => {
     const b = e.target.closest("[data-x]"); if (!b || b.disabled) return;
     const x = b.dataset.x;
     if (x === "close") closeSheet(s);
-    else if (x === "pick") paintPick();
+    else if (x === "pick") { C.attr = null; paint(); }
     else if (x === "start") start(b.dataset.attr);
     else if (x === "A") commit("a");
     else if (x === "B") commit("b");
+    else if (x === "AB") commit("ab");
     else if (x === "skip") commit("skip");
     else if (x === "undo") undo();
   });
-  paintPick();
+  paint();
 }
+
+/* Ponto de inspeção para depuração e testes automatizados (não altera nada). */
+Object.defineProperty(window, "__prato", { value: Object.freeze({ S, T, Logica: L, versao: APP_VERSAO }) });
 
 boot();
 </script>

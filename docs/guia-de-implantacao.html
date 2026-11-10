@@ -1,0 +1,689 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Prato a Dois · Guia de implantação</title>
+<style>
+/* Guia em uma coluna: cada passo é um card com caixa de marcar; vermelho do app como destaque. */
+:root{
+  --red:#EA1D2C; --red-soft:#FDECEE; --ink:#2B2B2B; --strong:#141414; --muted:#6B6B6B;
+  --line:#E9E7E7; --soft:#F6F5F5; --ok:#1F8A4C; --ok-soft:#E7F5EC; --warn:#FFF6DB; --warn-ink:#6B4E00;
+  --font:-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --mono:ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  color-scheme:light;
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:#fff;color:var(--ink);font-family:var(--font);font-size:16px;line-height:1.55}
+.wrap{max-width:760px;margin:0 auto;padding:0 18px 80px}
+header.top{background:var(--red);color:#fff}
+header.top .wrap{padding:28px 18px 26px;display:flex;gap:16px;align-items:center}
+header.top h1{margin:0;font-size:26px;line-height:1.2;text-wrap:balance}
+header.top p{margin:4px 0 0;opacity:.9}
+.progress{position:sticky;top:0;z-index:5;background:#fff;border-bottom:1px solid var(--line)}
+.progress .wrap{padding:10px 18px;display:flex;align-items:center;gap:12px;font-size:14px;color:var(--muted);font-variant-numeric:tabular-nums}
+.bar{flex:1;height:8px;border-radius:8px;background:var(--soft);overflow:hidden}
+.bar i{display:block;height:100%;width:0;background:var(--ok);transition:width .25s}
+h2{font-size:22px;color:var(--strong);margin:40px 0 4px;text-wrap:balance}
+h2 small{display:block;font-size:14px;color:var(--muted);font-weight:500;margin-top:2px}
+.intro{margin:22px 0 0}
+.files{margin:14px 0 0;padding:14px 16px;border:1px solid var(--line);border-radius:12px;background:var(--soft);font-size:15px}
+.files code{font-family:var(--mono);font-size:14px}
+.files ul{margin:8px 0 0;padding-left:20px}
+.step{display:flex;gap:14px;padding:16px;border:1px solid var(--line);border-radius:14px;margin-top:12px;background:#fff}
+.step.done{border-color:#BFE3CC;background:#FAFDFB}
+.step input[type=checkbox]{width:24px;height:24px;margin:2px 0 0;accent-color:var(--ok);flex-shrink:0;cursor:pointer}
+.step .num{font-weight:800;color:var(--red);margin-right:6px}
+.step h3{margin:0;font-size:17px;color:var(--strong);line-height:1.35}
+.step.done h3{color:var(--ok)}
+.step .body{flex:1;min-width:0}
+.step ol,.step ul{margin:8px 0 0;padding-left:22px}
+.step li{margin:4px 0}
+.step p{margin:8px 0 0}
+b.ui{background:var(--soft);border:1px solid var(--line);border-radius:6px;padding:0 6px;font-weight:700;color:var(--strong);white-space:nowrap}
+code{font-family:var(--mono);font-size:.92em;background:var(--soft);padding:1px 5px;border-radius:5px;overflow-wrap:anywhere}
+.note{margin-top:10px;padding:10px 12px;border-radius:10px;font-size:14.5px}
+.note.warn{background:var(--warn);color:var(--warn-ink)}
+.note.ok{background:var(--ok-soft);color:#16613A}
+.note.info{background:#EEF3FE;color:#24448F}
+.code{position:relative;margin-top:10px;border:1px solid var(--line);border-radius:12px;overflow:hidden}
+.code-head{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:8px 10px 8px 14px;background:var(--soft);border-bottom:1px solid var(--line);font-size:13px;color:var(--muted)}
+.code pre{margin:0;padding:12px 14px;max-height:300px;overflow:auto;font-family:var(--mono);font-size:12.5px;line-height:1.5;background:#fff;white-space:pre}
+.code.short pre{max-height:none}
+button.copy{font:inherit;font-size:14px;font-weight:700;border:0;border-radius:8px;background:var(--red);color:#fff;padding:8px 14px;cursor:pointer;min-height:38px}
+button.copy.copied{background:var(--ok)}
+a{color:var(--red);font-weight:600}
+.faq dt{font-weight:700;color:var(--strong);margin-top:16px}
+.faq dd{margin:4px 0 0}
+footer{margin-top:40px;color:var(--muted);font-size:13px;text-align:center}
+:focus-visible{outline:2px solid var(--red);outline-offset:2px}
+</style>
+</head>
+<body>
+<header class="top"><div class="wrap">
+  <svg width="56" height="56" viewBox="0 0 40 40" aria-hidden="true"><rect width="40" height="40" rx="12" fill="#fff"/><circle cx="20" cy="21" r="10.5" fill="none" stroke="#EA1D2C" stroke-width="2.6"/><path d="M20 26.2l-4.3-4.1a2.6 2.6 0 0 1 4.3-2.9 2.6 2.6 0 0 1 4.3 2.9z" fill="#EA1D2C"/></svg>
+  <div><h1>Prato a Dois · guia de implantação</h1><p>Do zero ao app no celular em cerca de 30 minutos. Tudo no plano grátis.</p></div>
+</div></header>
+<div class="progress"><div class="wrap"><div class="bar"><i id="bar"></i></div><span id="count">0 de 0 passos</span></div></div>
+
+<main class="wrap">
+  <p class="intro">Marque cada passo quando terminar. O progresso fica salvo neste navegador, então dá para parar e voltar depois.</p>
+  <div class="files">
+    <b>O que veio no zip</b>
+    <ul>
+      <li>Os arquivos do app: <code>index.html</code>, <code>logica.js</code>, <code>config.js</code>, <code>manifest.webmanifest</code>, <code>sw.js</code> e os ícones <code>.png</code>. É isso que vai para o GitHub (o repositório oficial já tem tudo, inclusive as pastas <code>docs</code> e <code>dev</code>).</li>
+      <li><code>supabase.sql</code>: o banco de dados. Ele também está no passo 1.4 com botão de copiar.</li>
+      <li>Este guia.</li>
+    </ul>
+    <p style="margin:8px 0 0">Faça as partes 1 e 2 num <b>computador</b>. A parte 3 é no celular.</p>
+  </div>
+
+  <h2>Parte 1 · Banco de dados no Supabase<small>cerca de 10 minutos</small></h2>
+
+  <div class="step" data-step><input type="checkbox" aria-label="Passo 1.1 feito"><div class="body">
+    <h3><span class="num">1.1</span>Crie uma conta no GitHub (se ainda não tiver)</h3>
+    <ol>
+      <li>Acesse <a href="https://github.com/signup" target="_blank" rel="noopener">github.com/signup</a>.</li>
+      <li>Preencha e-mail, senha e um nome de usuário. Guarde o nome de usuário: ele vai aparecer no link do app.</li>
+      <li>Confirme o código que chega por e-mail.</li>
+    </ol>
+    <p>Você vai usar essa mesma conta para entrar no Supabase.</p>
+  </div></div>
+
+  <div class="step" data-step><input type="checkbox" aria-label="Passo 1.2 feito"><div class="body">
+    <h3><span class="num">1.2</span>Entre no Supabase com o GitHub</h3>
+    <ol>
+      <li>Acesse <a href="https://supabase.com/dashboard" target="_blank" rel="noopener">supabase.com/dashboard</a>.</li>
+      <li>Clique em <b class="ui">Continue with GitHub</b> e autorize.</li>
+      <li>Se pedir para criar uma organização: dê qualquer nome (ex.: <code>Miguel</code>), tipo <b class="ui">Personal</b>, plano <b class="ui">Free</b>, e clique em <b class="ui">Create organization</b>.</li>
+    </ol>
+  </div></div>
+
+  <div class="step" data-step><input type="checkbox" aria-label="Passo 1.3 feito"><div class="body">
+    <h3><span class="num">1.3</span>Crie o projeto</h3>
+    <ol>
+      <li>Clique em <b class="ui">New project</b>.</li>
+      <li><b>Project name</b>: <code>prato-a-dois</code>.</li>
+      <li><b>Database Password</b>: clique em <b class="ui">Generate a password</b> e guarde a senha num lugar seguro. O app não usa essa senha, mas ela é sua chave mestra do banco.</li>
+      <li><b>Region</b>: <b class="ui">South America (São Paulo)</b>.</li>
+      <li>Clique em <b class="ui">Create new project</b> e espere uns 2 minutos até o painel do projeto aparecer.</li>
+    </ol>
+  </div></div>
+
+  <div class="step" data-step><input type="checkbox" aria-label="Passo 1.4 feito"><div class="body">
+    <h3><span class="num">1.4</span>Crie as tabelas: cole o SQL e rode</h3>
+    <ol>
+      <li>No menu da esquerda, clique em <b class="ui">SQL Editor</b>.</li>
+      <li>Clique em <b class="ui">+</b> ou <b class="ui">New query</b> para abrir uma consulta em branco.</li>
+      <li>Clique em <b class="ui">Copiar SQL</b> aqui embaixo, cole no editor (Ctrl+V ou Cmd+V) e clique em <b class="ui">Run</b>.</li>
+      <li>Se aparecer um aviso de “destructive operation”, confirme em <b class="ui">Run this query</b>. É só porque o script recria as regras de acesso; nenhum dado é apagado.</li>
+    </ol>
+    <div class="note ok">Deu certo quando aparecer <b>Success. No rows returned</b> embaixo do editor.</div>
+    <div class="code"><div class="code-head"><span>supabase.sql</span><button class="copy" data-copy="sql">Copiar SQL</button></div><pre id="sql">-- =====================================================================
+--  PRATO A DOIS · banco de dados para o Supabase · VERSÃO 2
+--  Como usar: no Supabase, abra "SQL Editor", cole TUDO e clique em "Run".
+--  Pode rodar de novo sem medo: o script não apaga dados existentes.
+--  Para atualizar de uma versão anterior, é só rodar este arquivo inteiro de novo.
+--
+--  Mudou algo aqui? Suba o número em versao_banco() (seção 6) e, se o app
+--  depender da mudança, o BANCO_VERSAO_MIN em index.html.
+--  Histórico:  v1 · estrutura inicial
+--              v2 · opção "ambos" (os dois) nos atributos; transições de papel explícitas
+-- =====================================================================
+
+-- ---------------------------------------------------------------------
+-- 1. Tabelas
+-- ---------------------------------------------------------------------
+
+-- Um cardápio por casal. O código tem 5 caracteres, sem 0, O, 1, I e L.
+create table if not exists public.cardapios (
+  codigo     text primary key check (codigo ~ '^[A-HJKMNP-Z2-9]{5}$'),
+  nome       text not null check (char_length(nome) between 1 and 40),
+  dono       uuid not null,
+  criado_em  timestamptz not null default now()
+);
+
+-- Quem participa de cada cardápio e com qual papel.
+create table if not exists public.membros (
+  cardapio   text not null references public.cardapios(codigo) on delete cascade,
+  user_id    uuid not null,
+  nome       text not null default 'Alguém' check (char_length(nome) between 1 and 30),
+  papel      text not null default 'leitor' check (papel in ('dono', 'editor', 'leitor', 'pendente')),
+  criado_em  timestamptz not null default now(),
+  primary key (cardapio, user_id)
+);
+create index if not exists membros_user_idx on public.membros (user_id);
+
+-- Categorias de cada cardápio (as 14 iniciais são criadas junto com o cardápio).
+create table if not exists public.categorias (
+  id         uuid primary key default gen_random_uuid(),
+  cardapio   text not null references public.cardapios(codigo) on delete cascade,
+  nome       text not null check (char_length(nome) between 1 and 24),
+  icone      text not null default '🍴',
+  ordem      int  not null default 0,
+  criado_em  timestamptz not null default now()
+);
+create unique index if not exists categorias_nome_unico on public.categorias (cardapio, lower(nome));
+
+-- Pratos. Os 4 atributos do quiz são opcionais (null = sem resposta; 'ambos' = os dois).
+create table if not exists public.pratos (
+  id            uuid primary key default gen_random_uuid(),
+  cardapio      text not null references public.cardapios(codigo) on delete cascade,
+  nome          text not null check (char_length(nome) between 1 and 60),
+  origem        text not null check (origem in ('casa', 'restaurante')),
+  restaurante   text not null default '' check (char_length(restaurante) &lt;= 50),
+  categorias    uuid[] not null default '{}',
+  tempo         text check (tempo   in ('rapido', 'elaborado', 'ambos')),
+  peso          text check (peso    in ('leve', 'encorpado', 'ambos')),
+  sabor         text check (sabor   in ('salgado', 'doce', 'ambos')),
+  ocasiao       text check (ocasiao in ('diadia', 'especial', 'ambos')),
+  criado_por    uuid not null default auth.uid(),
+  criado_em     timestamptz not null default now(),
+  atualizado_em timestamptz not null default now(),
+  unique (id, cardapio)
+);
+create index if not exists pratos_cardapio_idx on public.pratos (cardapio);
+
+-- v2: bancos criados na v1 ganham a opção 'ambos' nos 4 atributos (refaz as regras de valor).
+alter table public.pratos drop constraint if exists pratos_tempo_check;
+alter table public.pratos add  constraint pratos_tempo_check   check (tempo   in ('rapido', 'elaborado', 'ambos'));
+alter table public.pratos drop constraint if exists pratos_peso_check;
+alter table public.pratos add  constraint pratos_peso_check    check (peso    in ('leve', 'encorpado', 'ambos'));
+alter table public.pratos drop constraint if exists pratos_sabor_check;
+alter table public.pratos add  constraint pratos_sabor_check   check (sabor   in ('salgado', 'doce', 'ambos'));
+alter table public.pratos drop constraint if exists pratos_ocasiao_check;
+alter table public.pratos add  constraint pratos_ocasiao_check check (ocasiao in ('diadia', 'especial', 'ambos'));
+
+-- Fotos ficam numa tabela à parte (texto base64, máx. ~300 KB) para a lista de pratos carregar rápido.
+create table if not exists public.fotos (
+  prato_id      uuid primary key,
+  cardapio      text not null,
+  data          text not null check (data like 'data:image/%' and char_length(data) &lt; 400000),
+  atualizado_em timestamptz not null default now(),
+  foreign key (prato_id, cardapio) references public.pratos (id, cardapio) on delete cascade
+);
+create index if not exists fotos_cardapio_idx on public.fotos (cardapio);
+
+-- Nota de cada pessoa para cada prato (1 a 5).
+create table if not exists public.notas (
+  prato_id      uuid not null,
+  cardapio      text not null,
+  user_id       uuid not null default auth.uid(),
+  nota          int  not null check (nota between 1 and 5),
+  atualizado_em timestamptz not null default now(),
+  primary key (prato_id, user_id),
+  foreign key (prato_id, cardapio) references public.pratos (id, cardapio) on delete cascade
+);
+create index if not exists notas_cardapio_idx on public.notas (cardapio);
+
+-- Cada "Fizemos hoje" / "Pedimos hoje".
+create table if not exists public.feitos (
+  id         uuid primary key default gen_random_uuid(),
+  prato_id   uuid not null,
+  cardapio   text not null,
+  data       date not null default current_date,
+  por        uuid not null default auth.uid(),
+  criado_em  timestamptz not null default now(),
+  foreign key (prato_id, cardapio) references public.pratos (id, cardapio) on delete cascade
+);
+create index if not exists feitos_cardapio_idx on public.feitos (cardapio);
+
+-- ---------------------------------------------------------------------
+-- 2. Funções de apoio para as regras de acesso
+-- ---------------------------------------------------------------------
+
+create or replace function public.e_membro(p_cardapio text) returns boolean
+language sql stable security definer set search_path = public as $$
+  select exists (select 1 from public.membros where cardapio = p_cardapio and user_id = auth.uid());
+$$;
+
+create or replace function public.pode_editar(p_cardapio text) returns boolean
+language sql stable security definer set search_path = public as $$
+  select exists (select 1 from public.membros
+                 where cardapio = p_cardapio and user_id = auth.uid() and papel in ('dono', 'editor'));
+$$;
+
+create or replace function public.e_dono(p_cardapio text) returns boolean
+language sql stable security definer set search_path = public as $$
+  select exists (select 1 from public.membros
+                 where cardapio = p_cardapio and user_id = auth.uid() and papel = 'dono');
+$$;
+
+-- ---------------------------------------------------------------------
+-- 3. Regras de acesso (Row Level Security)
+--    Só quem é membro enxerga um cardápio; só dono e editor alteram.
+-- ---------------------------------------------------------------------
+
+alter table public.cardapios  enable row level security;
+alter table public.membros    enable row level security;
+alter table public.categorias enable row level security;
+alter table public.pratos     enable row level security;
+alter table public.fotos      enable row level security;
+alter table public.notas      enable row level security;
+alter table public.feitos     enable row level security;
+
+drop policy if exists cardapios_ler       on public.cardapios;
+drop policy if exists cardapios_renomear  on public.cardapios;
+create policy cardapios_ler      on public.cardapios for select to authenticated using (public.e_membro(codigo));
+create policy cardapios_renomear on public.cardapios for update to authenticated
+  using (public.e_dono(codigo)) with check (public.e_dono(codigo));
+
+drop policy if exists membros_ler on public.membros;
+create policy membros_ler on public.membros for select to authenticated using (public.e_membro(cardapio));
+
+drop policy if exists categorias_ler     on public.categorias;
+drop policy if exists categorias_criar   on public.categorias;
+drop policy if exists categorias_alterar on public.categorias;
+drop policy if exists categorias_apagar  on public.categorias;
+create policy categorias_ler     on public.categorias for select to authenticated using (public.e_membro(cardapio));
+create policy categorias_criar   on public.categorias for insert to authenticated with check (public.pode_editar(cardapio));
+create policy categorias_alterar on public.categorias for update to authenticated
+  using (public.pode_editar(cardapio)) with check (public.pode_editar(cardapio));
+create policy categorias_apagar  on public.categorias for delete to authenticated using (public.pode_editar(cardapio));
+
+drop policy if exists pratos_ler     on public.pratos;
+drop policy if exists pratos_criar   on public.pratos;
+drop policy if exists pratos_alterar on public.pratos;
+drop policy if exists pratos_apagar  on public.pratos;
+create policy pratos_ler     on public.pratos for select to authenticated using (public.e_membro(cardapio));
+create policy pratos_criar   on public.pratos for insert to authenticated
+  with check (public.pode_editar(cardapio) and criado_por = auth.uid());
+create policy pratos_alterar on public.pratos for update to authenticated
+  using (public.pode_editar(cardapio)) with check (public.pode_editar(cardapio));
+create policy pratos_apagar  on public.pratos for delete to authenticated using (public.pode_editar(cardapio));
+
+drop policy if exists fotos_ler     on public.fotos;
+drop policy if exists fotos_criar   on public.fotos;
+drop policy if exists fotos_alterar on public.fotos;
+drop policy if exists fotos_apagar  on public.fotos;
+create policy fotos_ler     on public.fotos for select to authenticated using (public.e_membro(cardapio));
+create policy fotos_criar   on public.fotos for insert to authenticated with check (public.pode_editar(cardapio));
+create policy fotos_alterar on public.fotos for update to authenticated
+  using (public.pode_editar(cardapio)) with check (public.pode_editar(cardapio));
+create policy fotos_apagar  on public.fotos for delete to authenticated using (public.pode_editar(cardapio));
+
+drop policy if exists notas_ler     on public.notas;
+drop policy if exists notas_criar   on public.notas;
+drop policy if exists notas_alterar on public.notas;
+drop policy if exists notas_apagar  on public.notas;
+create policy notas_ler     on public.notas for select to authenticated using (public.e_membro(cardapio));
+create policy notas_criar   on public.notas for insert to authenticated
+  with check (user_id = auth.uid() and public.pode_editar(cardapio));
+create policy notas_alterar on public.notas for update to authenticated
+  using (user_id = auth.uid() and public.pode_editar(cardapio))
+  with check (user_id = auth.uid() and public.pode_editar(cardapio));
+create policy notas_apagar  on public.notas for delete to authenticated
+  using (user_id = auth.uid() and public.pode_editar(cardapio));
+
+drop policy if exists feitos_ler    on public.feitos;
+drop policy if exists feitos_criar  on public.feitos;
+drop policy if exists feitos_apagar on public.feitos;
+create policy feitos_ler    on public.feitos for select to authenticated using (public.e_membro(cardapio));
+create policy feitos_criar  on public.feitos for insert to authenticated
+  with check (por = auth.uid() and public.pode_editar(cardapio));
+create policy feitos_apagar on public.feitos for delete to authenticated using (public.pode_editar(cardapio));
+
+-- Permissões por coluna: ninguém troca o dono, o código ou o cardápio de um prato pela API.
+revoke all on public.cardapios, public.membros, public.categorias, public.pratos,
+              public.fotos, public.notas, public.feitos from anon;
+revoke insert, update, delete on public.cardapios from authenticated;
+grant  select on public.cardapios to authenticated;
+grant  update (nome) on public.cardapios to authenticated;
+revoke insert, update, delete on public.membros from authenticated;
+grant  select on public.membros to authenticated;
+grant  select, insert, delete on public.categorias, public.pratos to authenticated;
+revoke update on public.categorias, public.pratos from authenticated;
+grant  update (nome, icone, ordem) on public.categorias to authenticated;
+grant  update (nome, origem, restaurante, categorias, tempo, peso, sabor, ocasiao, atualizado_em) on public.pratos to authenticated;
+grant  select, insert, update, delete on public.fotos, public.notas to authenticated;
+revoke update on public.feitos from authenticated;
+grant  select, insert, delete on public.feitos to authenticated;
+
+-- ---------------------------------------------------------------------
+-- 4. Ações que precisam de regra especial (chamadas pelo app)
+-- ---------------------------------------------------------------------
+
+-- Cria um cardápio com código único, a pessoa como dona e as categorias iniciais.
+create or replace function public.criar_cardapio(p_nome text, p_meu_nome text) returns text
+language plpgsql security definer set search_path = public as $$
+declare
+  v_codigo    text;
+  v_chars     constant text := 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
+  v_tentativa int := 0;
+begin
+  if auth.uid() is null then raise exception 'Sessão não encontrada.'; end if;
+  loop
+    v_tentativa := v_tentativa + 1;
+    v_codigo := '';
+    for i in 1..5 loop
+      v_codigo := v_codigo || substr(v_chars, 1 + floor(random() * length(v_chars))::int, 1);
+    end loop;
+    begin
+      insert into cardapios (codigo, nome, dono)
+      values (v_codigo, left(coalesce(nullif(btrim(p_nome), ''), 'Nosso cardápio'), 40), auth.uid());
+      exit;
+    exception when unique_violation then
+      if v_tentativa &gt; 25 then raise; end if;
+    end;
+  end loop;
+
+  insert into membros (cardapio, user_id, nome, papel)
+  values (v_codigo, auth.uid(), left(coalesce(nullif(btrim(p_meu_nome), ''), 'Dono'), 30), 'dono');
+
+  insert into categorias (cardapio, nome, icone, ordem)
+  select v_codigo, c.nome, c.icone, c.ordem
+  from (values ('Hambúrguer', '🍔', 1), ('Pizza', '🍕', 2), ('Massas', '🍝', 3), ('Risoto', '🍚', 4),
+               ('Asiática', '🥢', 5), ('Japonesa', '🍣', 6), ('Churrasco', '🔥', 7), ('Carnes', '🥩', 8),
+               ('Saladas', '🥗', 9), ('Wraps', '🌯', 10), ('Sopas', '🍲', 11), ('Lanches', '🥪', 12),
+               ('Air fryer', '🍟', 13), ('Sobremesas', '🍰', 14)) as c (nome, icone, ordem);
+  return v_codigo;
+end $$;
+
+-- Entra num cardápio pelo código (como leitor). Devolve null se o código não existe.
+create or replace function public.entrar_cardapio(p_codigo text, p_meu_nome text) returns json
+language plpgsql security definer set search_path = public as $$
+declare
+  v_card  cardapios;
+  v_papel text;
+begin
+  if auth.uid() is null then raise exception 'Sessão não encontrada.'; end if;
+  select * into v_card from cardapios where codigo = upper(btrim(p_codigo));
+  if not found then return null; end if;
+  insert into membros (cardapio, user_id, nome, papel)
+  values (v_card.codigo, auth.uid(), left(coalesce(nullif(btrim(p_meu_nome), ''), 'Alguém'), 30), 'leitor')
+  on conflict (cardapio, user_id) do nothing;
+  select papel into v_papel from membros where cardapio = v_card.codigo and user_id = auth.uid();
+  return json_build_object('codigo', v_card.codigo, 'nome', v_card.nome, 'papel', v_papel);
+end $$;
+
+-- Leitor pede para poder editar.
+create or replace function public.pedir_edicao(p_codigo text) returns boolean
+language plpgsql security definer set search_path = public as $$
+begin
+  update membros set papel = 'pendente'
+  where cardapio = p_codigo and user_id = auth.uid() and papel = 'leitor';
+  return found;
+end $$;
+
+-- Dono muda o papel de outra pessoa. Só valem estas transições (iguais a ACOES_PAPEL em logica.js):
+--   aprovar      pendente → editor        recusar  pendente → leitor
+--   tornar dono  editor   → dono          tirar edição  editor → leitor
+--   remover      leitor   → (sai do cardápio)
+-- Dono nunca é rebaixado nem removido por outra pessoa.
+create or replace function public.definir_papel(p_codigo text, p_user uuid, p_papel text) returns boolean
+language plpgsql security definer set search_path = public as $$
+declare v_atual text;
+begin
+  if not public.e_dono(p_codigo) then raise exception 'Só o dono pode fazer isso.'; end if;
+  if p_user = auth.uid() then raise exception 'Você não pode mudar o seu próprio papel.'; end if;
+  select papel into v_atual from membros where cardapio = p_codigo and user_id = p_user for update;
+  if not found then raise exception 'Essa pessoa não está neste cardápio.'; end if;
+  if (v_atual, p_papel) not in (('pendente', 'editor'), ('pendente', 'leitor'),
+                                ('editor', 'dono'), ('editor', 'leitor'),
+                                ('leitor', 'remover')) then
+    raise exception 'Mudança de papel não permitida: % para %.', v_atual, p_papel;
+  end if;
+  if p_papel = 'remover' then
+    delete from membros where cardapio = p_codigo and user_id = p_user;
+  else
+    update membros set papel = p_papel where cardapio = p_codigo and user_id = p_user;
+  end if;
+  return true;
+end $$;
+
+-- Atualiza o nome da pessoa em todos os cardápios dela.
+create or replace function public.renomear_me(p_nome text) returns void
+language plpgsql security definer set search_path = public as $$
+begin
+  if nullif(btrim(p_nome), '') is null then return; end if;
+  update membros set nome = left(btrim(p_nome), 30) where user_id = auth.uid();
+end $$;
+
+revoke execute on function public.criar_cardapio(text, text)          from public, anon;
+revoke execute on function public.entrar_cardapio(text, text)         from public, anon;
+revoke execute on function public.pedir_edicao(text)                  from public, anon;
+revoke execute on function public.definir_papel(text, uuid, text)     from public, anon;
+revoke execute on function public.renomear_me(text)                   from public, anon;
+revoke execute on function public.e_membro(text)                      from public, anon;
+revoke execute on function public.pode_editar(text)                   from public, anon;
+revoke execute on function public.e_dono(text)                        from public, anon;
+grant  execute on function public.criar_cardapio(text, text)          to authenticated;
+grant  execute on function public.entrar_cardapio(text, text)         to authenticated;
+grant  execute on function public.pedir_edicao(text)                  to authenticated;
+grant  execute on function public.definir_papel(text, uuid, text)     to authenticated;
+grant  execute on function public.renomear_me(text)                   to authenticated;
+grant  execute on function public.e_membro(text)                      to authenticated;
+grant  execute on function public.pode_editar(text)                   to authenticated;
+grant  execute on function public.e_dono(text)                        to authenticated;
+
+-- ---------------------------------------------------------------------
+-- 5. Atualização ao vivo (Realtime): o que um faz aparece no celular do outro
+-- ---------------------------------------------------------------------
+do $$
+declare t text;
+begin
+  if exists (select 1 from pg_publication where pubname = 'supabase_realtime') then
+    foreach t in array array['cardapios', 'membros', 'categorias', 'pratos', 'fotos', 'notas', 'feitos'] loop
+      begin
+        execute format('alter publication supabase_realtime add table public.%I', t);
+      exception when duplicate_object then null;
+      end;
+    end loop;
+  end if;
+end $$;
+
+-- ---------------------------------------------------------------------
+-- 6. Versão do banco: o app lê para saber o que este banco já suporta
+-- ---------------------------------------------------------------------
+create or replace function public.versao_banco() returns int
+language sql immutable as $$ select 2 $$;
+revoke execute on function public.versao_banco() from public, anon;
+grant  execute on function public.versao_banco() to authenticated;
+
+-- Pronto! Deve aparecer "Success. No rows returned".
+</pre></div>
+  </div></div>
+
+  <div class="step" data-step><input type="checkbox" aria-label="Passo 1.5 feito"><div class="body">
+    <h3><span class="num">1.5</span>Ligue o acesso sem login</h3>
+    <p>O app não tem login: cada celular ganha uma identidade anônima. Isso precisa ser ligado:</p>
+    <ol>
+      <li>No menu da esquerda, clique em <b class="ui">Authentication</b>.</li>
+      <li>Clique em <b class="ui">Sign In / Providers</b>.</li>
+      <li>Ative <b class="ui">Allow anonymous sign-ins</b>.</li>
+      <li>Clique em <b class="ui">Save changes</b>.</li>
+    </ol>
+    <div class="note warn">Se pular este passo, o app mostra a tela “Falta um ajuste no Supabase”.</div>
+  </div></div>
+
+  <div class="step" data-step><input type="checkbox" aria-label="Passo 1.6 feito"><div class="body">
+    <h3><span class="num">1.6</span>Copie a URL e a chave pública do projeto</h3>
+    <ol>
+      <li>No topo do painel do projeto, clique em <b class="ui">Connect</b>.</li>
+      <li>Copie a <b>Project URL</b> (algo como <code>https://abcdefghijklmnop.supabase.co</code>) e cole num bloco de notas.</li>
+      <li>Copie a <b>Publishable key</b> (começa com <code>sb_publishable_</code>) e cole também.</li>
+    </ol>
+    <p>Não achou o botão Connect? Vá em <b class="ui">Project Settings</b> (engrenagem) → <b class="ui">API Keys</b> para a chave, e em <b class="ui">Data API</b> para a URL. Em projetos antigos a chave pública se chama <b>anon public</b>: pode usar ela.</p>
+    <div class="note warn"><b>Nunca</b> use a <b>secret key</b> (<code>sb_secret_</code>) nem a <b>service_role</b>. Elas ignoram as regras de acesso e não podem ir para o GitHub.</div>
+  </div></div>
+
+  <h2>Parte 2 · Site no GitHub Pages<small>cerca de 10 minutos</small></h2>
+
+  <div class="step" data-step><input type="checkbox" aria-label="Passo 2.1 feito"><div class="body">
+    <h3><span class="num">2.1</span>Descompacte o zip no computador</h3>
+    <p>Clique com o botão direito no zip e escolha <b class="ui">Extrair tudo</b> (Windows) ou dê dois cliques (Mac). Você vai usar a pasta <code>site</code>.</p>
+  </div></div>
+
+  <div class="step" data-step><input type="checkbox" aria-label="Passo 2.2 feito"><div class="body">
+    <h3><span class="num">2.2</span>Crie o repositório</h3>
+    <ol>
+      <li>Entre em <a href="https://github.com/new" target="_blank" rel="noopener">github.com/new</a>.</li>
+      <li><b>Repository name</b>: <code>prato-a-dois</code>.</li>
+      <li>Deixe marcado <b class="ui">Public</b>. O GitHub Pages grátis só funciona com repositório público. O código fica visível, mas os dados de vocês ficam protegidos no Supabase.</li>
+      <li>Não marque README, .gitignore nem licença.</li>
+      <li>Clique em <b class="ui">Create repository</b>.</li>
+    </ol>
+  </div></div>
+
+  <div class="step" data-step><input type="checkbox" aria-label="Passo 2.3 feito"><div class="body">
+    <h3><span class="num">2.3</span>Envie os arquivos do app</h3>
+    <ol>
+      <li>Na página do repositório vazio, clique no link <b class="ui">uploading an existing file</b>.</li>
+      <li>Abra a pasta <code>site</code> no computador, selecione <b>todos os arquivos de dentro dela</b> (Ctrl+A ou Cmd+A) e arraste para a página. Arraste os arquivos, não a pasta.</li>
+      <li>Espere todos os arquivos aparecerem na lista.</li>
+      <li>Lá embaixo, clique em <b class="ui">Commit changes</b>.</li>
+    </ol>
+    <div class="note info">Confira: a página do repositório precisa mostrar <code>index.html</code> direto na lista, não dentro de uma pasta <code>site</code>.</div>
+  </div></div>
+
+  <div class="step" data-step><input type="checkbox" aria-label="Passo 2.4 feito"><div class="body">
+    <h3><span class="num">2.4</span>Cole a URL e a chave no config.js</h3>
+    <ol>
+      <li>No repositório, clique em <code>config.js</code>.</li>
+      <li>Clique no ícone de lápis (<b class="ui">Edit this file</b>), no canto direito acima do código.</li>
+      <li>Troque <code>COLE_AQUI_A_PROJECT_URL</code> pela Project URL e <code>COLE_AQUI_A_PUBLISHABLE_KEY</code> pela Publishable key. Mantenha as aspas.</li>
+      <li>Clique em <b class="ui">Commit changes...</b> e depois em <b class="ui">Commit changes</b> de novo na janela que abrir.</li>
+    </ol>
+    <p>Depois de editado, o miolo do arquivo fica assim (com os seus valores):</p>
+    <div class="code short"><div class="code-head"><span>config.js (exemplo)</span></div><pre>window.PRATO_CONFIG = {
+  supabaseUrl: "https://abcdefghijklmnop.supabase.co",
+  supabaseKey: "sb_publishable_Xy12AbCdEfGh34IjKlMn_5OpQrSt"
+};</pre></div>
+  </div></div>
+
+  <div class="step" data-step><input type="checkbox" aria-label="Passo 2.5 feito"><div class="body">
+    <h3><span class="num">2.5</span>Ligue o GitHub Pages</h3>
+    <ol>
+      <li>No repositório, clique na aba <b class="ui">Settings</b>.</li>
+      <li>No menu da esquerda, clique em <b class="ui">Pages</b>.</li>
+      <li>Em <b>Build and deployment</b> → <b>Source</b>, escolha <b class="ui">Deploy from a branch</b>.</li>
+      <li>Em <b>Branch</b>, escolha <b class="ui">main</b> e a pasta <b class="ui">/ (root)</b>.</li>
+      <li>Clique em <b class="ui">Save</b>.</li>
+    </ol>
+  </div></div>
+
+  <div class="step" data-step><input type="checkbox" aria-label="Passo 2.6 feito"><div class="body">
+    <h3><span class="num">2.6</span>Pegue o link do app e teste</h3>
+    <ol>
+      <li>Espere 1 a 2 minutos e recarregue a página <b>Pages</b>.</li>
+      <li>Vai aparecer <b>Your site is live at</b> com o link <code>https://SEU-USUARIO.github.io/prato-a-dois/</code>. Clique em <b class="ui">Visit site</b>.</li>
+      <li>Deve abrir a tela vermelha do Prato a Dois perguntando <b>Como você se chama?</b></li>
+    </ol>
+    <div class="note ok">Esse é o link do app. É ele que você manda para a namorada e para a república.</div>
+    <div class="note warn">Apareceu outra tela? Veja “Se algo der errado” no fim deste guia.</div>
+  </div></div>
+
+  <h2>Parte 3 · Instalar no celular<small>2 minutos por pessoa</small></h2>
+
+  <div class="step" data-step><input type="checkbox" aria-label="Passo 3.1 feito"><div class="body">
+    <h3><span class="num">3.1</span>Abra o link no navegador certo</h3>
+    <ul>
+      <li><b>iPhone</b>: abra no <b>Safari</b>. Se o link abrir dentro do WhatsApp ou Instagram, toque em <b class="ui">⋯</b> ou no ícone de compartilhar e escolha <b class="ui">Abrir no Safari</b>.</li>
+      <li><b>Android</b>: abra no <b>Chrome</b>.</li>
+    </ul>
+    <p>No primeiro acesso, o próprio app mostra o tutorial de instalação.</p>
+  </div></div>
+
+  <div class="step" data-step><input type="checkbox" aria-label="Passo 3.2 feito"><div class="body">
+    <h3><span class="num">3.2</span>Adicione à tela de início</h3>
+    <p><b>iPhone (Safari):</b></p>
+    <ol>
+      <li>Toque em <b class="ui">⋯</b> (três pontinhos) no canto de baixo, à direita. Se a barra mostrar o ícone de compartilhar (quadrado com seta), toque direto nele e pule o próximo item.</li>
+      <li>Toque em <b class="ui">Compartilhar</b>.</li>
+      <li>Toque em <b class="ui">Adicionar à Tela de Início</b>. Se não aparecer, toque em <b class="ui">Ver mais</b> ou role a lista.</li>
+      <li>Deixe <b class="ui">Abrir como App Web</b> ligado e toque em <b class="ui">Adicionar</b>.</li>
+    </ol>
+    <p><b>Android (Chrome):</b></p>
+    <ol>
+      <li>Toque em <b class="ui">⋮</b> (três pontinhos) no canto de cima, à direita.</li>
+      <li>Toque em <b class="ui">Instalar app</b> (em alguns celulares: <b class="ui">Adicionar à tela inicial</b>).</li>
+      <li>Confirme em <b class="ui">Instalar</b>.</li>
+    </ol>
+    <div class="note warn">No iPhone, instale <b>antes</b> de digitar o nome e criar o cardápio. O app instalado guarda os dados separado do Safari: o que for feito no Safari não aparece no app instalado.</div>
+    <p>Dá para ver esse tutorial de novo a qualquer hora: <b class="ui">Configurações</b> → <b class="ui">Como instalar no celular</b>.</p>
+  </div></div>
+
+  <div class="step" data-step><input type="checkbox" aria-label="Passo 3.3 feito"><div class="body">
+    <h3><span class="num">3.3</span>Crie o cardápio de vocês</h3>
+    <ol>
+      <li>Abra o <b>Prato a Dois</b> pelo ícone na tela de início.</li>
+      <li>Digite seu nome e toque em <b class="ui">Começar</b>.</li>
+      <li>Toque em <b class="ui">Criar cardápio novo</b>, dê um nome e toque em <b class="ui">Criar cardápio</b>.</li>
+      <li>Toque em <b class="ui">Compartilhar</b> (ou <b class="ui">Enviar pelo WhatsApp</b>) para mandar o link e o código de 5 caracteres para sua namorada.</li>
+    </ol>
+  </div></div>
+
+  <div class="step" data-step><input type="checkbox" aria-label="Passo 3.4 feito"><div class="body">
+    <h3><span class="num">3.4</span>Libere a edição para o seu par</h3>
+    <ol>
+      <li>Ela instala o app, digita o nome, toca em <b class="ui">Entrar com código</b> e digita o código.</li>
+      <li>Ela entra como leitora e toca em <b class="ui">Pedir para editar</b>.</li>
+      <li>No seu celular aparece o aviso de pedido. Toque nele (ou em <b class="ui">Configurações</b>) e em <b class="ui">Aprovar</b>.</li>
+      <li>Recomendado: em <b class="ui">Configurações</b> → <b>Pessoas</b>, toque em <b class="ui">Tornar dono</b> ao lado do nome dela. Assim, se um de vocês trocar de celular, o outro continua podendo aprovar pessoas.</li>
+    </ol>
+  </div></div>
+
+  <div class="step" data-step><input type="checkbox" aria-label="Passo 3.5 feito"><div class="body">
+    <h3><span class="num">3.5</span>Mande para a república</h3>
+    <p>Mande só o link do app. Cada amigo instala, cria o próprio cardápio e manda o código para a namorada, igual aos passos 3.3 e 3.4. Cada cardápio só é visto por quem entrou com o código dele.</p>
+  </div></div>
+
+  <h2>Se algo der errado</h2>
+  <dl class="faq">
+    <dt>Configurações mostra “Banco desatualizado”</dt>
+    <dd>O app foi atualizado e precisa de uma versão mais nova do banco. Rode o SQL do passo 1.4 inteiro de novo: ele atualiza sem apagar nada. Até lá o app funciona normalmente, só sem as novidades que dependem do banco (como a opção “os dois”).</dd>
+    <dt>Tela “Falta configurar o app”</dt>
+    <dd>O <code>config.js</code> ainda está com <code>COLE_AQUI</code> ou a URL não começa com <code>https://</code>. Refaça o passo 2.4 e espere 1 minuto.</dd>
+    <dt>Tela “Falta um ajuste no Supabase”</dt>
+    <dd>O acesso anônimo está desligado. Refaça o passo 1.5.</dd>
+    <dt>Tela “Chave inválida”</dt>
+    <dd>A chave do <code>config.js</code> não é a Publishable key deste projeto. Copie de novo no passo 1.6, com cuidado para não sobrar espaço nem faltar letra.</dd>
+    <dt>Erro “permissão” ao criar o cardápio, ou tabelas não encontradas</dt>
+    <dd>O SQL não rodou inteiro. Volte ao passo 1.4 e rode de novo: ele pode ser rodado quantas vezes precisar.</dd>
+    <dt>O GitHub mostra “404 There isn’t a GitHub Pages site here”</dt>
+    <dd>Espere mais alguns minutos. Se continuar, confira se o <code>index.html</code> está na raiz do repositório (passo 2.3) e se o Pages está em <b>main</b> e <b>/ (root)</b> (passo 2.5).</dd>
+    <dt>O app parou de carregar depois de uns dias sem uso</dt>
+    <dd>No plano grátis, o Supabase pausa o projeto depois de 7 dias sem uso e manda um e-mail avisando. Entre em <a href="https://supabase.com/dashboard" target="_blank" rel="noopener">supabase.com/dashboard</a>, abra o projeto e clique em <b class="ui">Resume project</b>. Os dados continuam lá. Usando o app toda semana, isso não acontece.</dd>
+    <dt>Troquei de celular ou apaguei os dados do navegador</dt>
+    <dd>O app não tem login, então o celular novo vira uma pessoa nova. Entre de novo com o código e peça para editar. Se você era o único dono, peça para o outro dono aprovar; por isso vale tornar seu par dono também (passo 3.4).</dd>
+    <dt>Quero mudar o nome do app</dt>
+    <dd>Edite no GitHub (lápis): em <code>manifest.webmanifest</code>, os campos <code>name</code> e <code>short_name</code>; em <code>index.html</code>, a linha <code>const APP_NAME = "Prato a Dois";</code>, a tag <code>&lt;title&gt;</code> e a linha <code>apple-mobile-web-app-title</code>. Quem já instalou precisa remover o ícone e adicionar de novo para ver o nome novo.</dd>
+    <dt>Como atualizo o app depois?</dt>
+    <dd>Troque o arquivo no GitHub (lápis para editar, ou <b class="ui">Add file</b> → <b class="ui">Upload files</b> para substituir). O celular pega a versão nova na próxima vez que abrir o app, em alguns minutos.</dd>
+  </dl>
+
+  <footer>Prato a Dois · GitHub Pages + Supabase · banco versão 2 · guia de novembro de 2026</footer>
+</main>
+
+<script>
+(function () {
+  var KEY = "prato-guia-passos";
+  var steps = Array.prototype.slice.call(document.querySelectorAll("[data-step]"));
+  var saved = {};
+  try { saved = JSON.parse(localStorage.getItem(KEY) || "{}"); } catch (e) {}
+  function update() {
+    var done = 0;
+    steps.forEach(function (s, i) { var c = s.querySelector("input"); s.classList.toggle("done", c.checked); if (c.checked) done++; saved[i] = c.checked; });
+    document.getElementById("bar").style.width = (done / steps.length * 100) + "%";
+    document.getElementById("count").textContent = done + " de " + steps.length + " passos";
+    try { localStorage.setItem(KEY, JSON.stringify(saved)); } catch (e) {}
+  }
+  steps.forEach(function (s, i) { var c = s.querySelector("input"); c.checked = !!saved[i]; c.addEventListener("change", update); });
+  update();
+  document.querySelectorAll("button[data-copy]").forEach(function (b) {
+    b.addEventListener("click", function () {
+      var text = document.getElementById(b.getAttribute("data-copy")).textContent;
+      var ok = function () { var t = b.textContent; b.textContent = "Copiado!"; b.classList.add("copied"); setTimeout(function () { b.textContent = t; b.classList.remove("copied"); }, 1800); };
+      if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(text).then(ok, fallback); else fallback();
+      function fallback() {
+        var ta = document.createElement("textarea"); ta.value = text; ta.style.position = "fixed"; ta.style.opacity = "0";
+        document.body.appendChild(ta); ta.select();
+        try { if (document.execCommand("copy")) ok(); } catch (e) {}
+        ta.remove();
+      }
+    });
+  });
+})();
+</script>
+</body>
+</html>

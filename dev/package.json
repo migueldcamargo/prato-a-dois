@@ -1,0 +1,12 @@
+{
+  "name": "prato-a-dois-dev",
+  "private": true,
+  "description": "Ferramentas de teste do Prato a Dois. O app em si não usa build nem npm.",
+  "scripts": {
+    "test:logica": "node test_logica.mjs",
+    "test:e2e": "python3 e2e.py"
+  },
+  "devDependencies": {
+    "@supabase/supabase-js": "2.118.0"
+  }
+}
